@@ -20,6 +20,12 @@
       .version-list, .audit-list { display: grid; gap: 12px; }
       .version, .audit { padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(15, 23, 42, 0.8); }
       .meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 13px; }
+      .markdown { line-height: 1.7; color: #dbeafe; }
+      .markdown h1, .markdown h2, .markdown h3 { color: #ffffff; margin-top: 0; }
+      .markdown p, .markdown ul { margin: 0 0 14px; }
+      .markdown code { padding: 0.15rem 0.45rem; border-radius: 8px; background: rgba(15, 23, 42, 0.95); color: #bae6fd; }
+      .markdown pre { margin-bottom: 14px; }
+      .markdown pre code { display: block; padding: 0; background: transparent; }
       @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
     </style>
   </head>
@@ -35,7 +41,9 @@
       <section class="grid">
         <div class="card">
           <h2>Skill Overview</h2>
-          <pre id="readme">Loading…</pre>
+          <div id="overview" class="meta"></div>
+          <h2 style="margin-top:20px;">Skill Content</h2>
+          <article id="readme-html" class="markdown">Loading…</article>
         </div>
 
         <div class="card" style="display:grid; gap: 16px; align-content:start;">
@@ -60,13 +68,14 @@
       const skillId = decodeURIComponent(window.location.pathname.split('/').pop());
       const titleEl = document.getElementById('title');
       const summaryEl = document.getElementById('summary');
-      const readmeEl = document.getElementById('readme');
+      const overviewEl = document.getElementById('overview');
+      const readmeEl = document.getElementById('readme-html');
       const installCommandEl = document.getElementById('install-command');
       const versionsEl = document.getElementById('versions');
       const auditEvidenceEl = document.getElementById('audit-evidence');
 
       function escapeHtml(value) {
-        return value
+        return String(value)
           .replaceAll('&', '&amp;')
           .replaceAll('<', '&lt;')
           .replaceAll('>', '&gt;')
@@ -83,7 +92,13 @@
         const payload = await response.json();
         titleEl.textContent = payload.title;
         summaryEl.textContent = payload.summary;
-        readmeEl.textContent = payload.readme_markdown;
+        overviewEl.innerHTML = [
+          `<span>${escapeHtml(payload.category || 'uncategorized')}</span>`,
+          `<span>${escapeHtml(payload.risk_level)}</span>`,
+          `<span>${escapeHtml(payload.latest_version)}</span>`,
+          `<span>${escapeHtml(formatDate(payload.published_at))}</span>`
+        ].join('');
+        readmeEl.innerHTML = payload.readme_html || '<p>No skill content available.</p>';
         installCommandEl.textContent = payload.install_command;
         versionsEl.innerHTML = payload.versions.map((version) => `
           <div class="version">

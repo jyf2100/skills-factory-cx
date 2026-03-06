@@ -11,6 +11,13 @@ interface CatalogDeps {
   fetchImpl?: typeof fetch;
 }
 
+interface CategoryDetailOptions {
+  sort?: "latest" | "title" | "risk";
+  q?: string;
+  risk?: RiskLevel;
+  tag?: string;
+}
+
 export interface CatalogSkillSummary {
   skill_id: string;
   title: string;
@@ -40,6 +47,7 @@ export interface CatalogSkillVersion {
 
 export interface CatalogSkillDetail extends CatalogSkillSummary {
   readme_markdown: string;
+  readme_html: string;
   install_command: string;
   versions: CatalogSkillVersion[];
 }
@@ -84,6 +92,13 @@ export interface CatalogCategoryDetail {
   slug: string;
   label: string;
   items: CatalogSkillSummary[];
+  filters: {
+    sort: "latest" | "title" | "risk";
+    q: string;
+    risk: string;
+    tag: string;
+  };
+  available_tags: string[];
 }
 
 export interface CatalogAuditDetailVersion {
@@ -107,6 +122,16 @@ export interface CatalogAuditDetail {
   latest_static_scan_status: "clean" | "issues_detected";
   latest_sandbox_status: "passed" | "blocked";
   versions: CatalogAuditDetailVersion[];
+}
+
+export interface CatalogAuditVersionDetail extends CatalogAuditDetailVersion {
+  skill_id: string;
+  title: string;
+  category: string;
+  version: string;
+  published_at: string;
+  source_url: string;
+  package_url: string;
 }
 
 interface ParsedSkillMarkdown {
@@ -170,6 +195,7 @@ export class GitLabCatalogService {
     return {
       ...aggregate.summary,
       readme_markdown: aggregate.latest.readmeMarkdown,
+      readme_html: renderSkillMarkdown(aggregate.latest.readmeMarkdown),
       install_command: `npx find-skills install --from <internal-market> ${skillId} ${aggregate.latest.record.version}`,
       versions: aggregate.versions.map((bundle) => ({
         version: bundle.record.version,
@@ -198,9 +224,9 @@ export class GitLabCatalogService {
           risk_level: bundle.record.risk_level,
           note: bundle.attestation.approval.note,
           scan_issue_count: bundle.attestation.scan_issues.length,
-          review_status: (bundle.attestation.approval.decision === "approve" ? "approved" : "rejected") as "approved" | "rejected",
-          static_scan_status: (bundle.attestation.scan_issues.length > 0 ? "issues_detected" : "clean") as "clean" | "issues_detected",
-          sandbox_status: (bundle.attestation.sandbox_result.ok ? "passed" : "blocked") as "passed" | "blocked",
+          review_status: approvalStatus(bundle) as "approved" | "rejected",
+          static_scan_status: scanStatus(bundle) as "clean" | "issues_detected",
+          sandbox_status: sandboxStatus(bundle) as "passed" | "blocked",
           category: bundle.parsed.category
         }))
       )
@@ -251,9 +277,9 @@ export class GitLabCatalogService {
       reviewed_at: bundle.attestation.approval.reviewed_at,
       note: bundle.attestation.approval.note,
       risk_level: bundle.record.risk_level,
-      review_status: (bundle.attestation.approval.decision === "approve" ? "approved" : "rejected") as "approved" | "rejected",
-      static_scan_status: (bundle.attestation.scan_issues.length > 0 ? "issues_detected" : "clean") as "clean" | "issues_detected",
-      sandbox_status: (bundle.attestation.sandbox_result.ok ? "passed" : "blocked") as "passed" | "blocked",
+      review_status: approvalStatus(bundle) as "approved" | "rejected",
+      static_scan_status: scanStatus(bundle) as "clean" | "issues_detected",
+      sandbox_status: sandboxStatus(bundle) as "passed" | "blocked",
       scan_issue_count: bundle.attestation.scan_issues.length
     }));
 
@@ -269,13 +295,71 @@ export class GitLabCatalogService {
     };
   }
 
-  async getCategoryDetail(slug: string): Promise<CatalogCategoryDetail | undefined> {
+  async getAuditVersionDetail(skillId: string, version: string): Promise<CatalogAuditVersionDetail | undefined> {
+    const aggregate = (await this.loadAggregates()).find((item) => item.entry.skill_id === skillId);
+    const bundle = aggregate?.versions.find((item) => item.record.version === version);
+    if (!aggregate || !bundle) {
+      return undefined;
+    }
+
+    return {
+      skill_id: aggregate.summary.skill_id,
+      title: aggregate.summary.title,
+      category: aggregate.summary.category,
+      version: bundle.record.version,
+      reviewer: bundle.attestation.approval.reviewer,
+      reviewed_at: bundle.attestation.approval.reviewed_at,
+      note: bundle.attestation.approval.note,
+      risk_level: bundle.record.risk_level,
+      review_status: approvalStatus(bundle) as "approved" | "rejected",
+      static_scan_status: scanStatus(bundle) as "clean" | "issues_detected",
+      sandbox_status: sandboxStatus(bundle) as "passed" | "blocked",
+      scan_issue_count: bundle.attestation.scan_issues.length,
+      published_at: bundle.record.published_at,
+      source_url: bundle.record.source_url,
+      package_url: this.catalogPackageUrl(bundle.record.skill_id, bundle.record.version, bundle.install.package_url)
+    };
+  }
+
+  async getCategoryDetail(slug: string, options: CategoryDetailOptions = {}): Promise<CatalogCategoryDetail | undefined> {
     const categories = await this.listCategories();
     const category = categories.find((item) => item.slug === slug);
     if (!category) {
       return undefined;
     }
-    return { slug: category.slug, label: category.label, items: category.items };
+
+    const normalized = normalizeCategoryDetailOptions(options);
+    const availableTags = [...new Set(category.items.flatMap((item) => item.tags))].sort((left, right) => left.localeCompare(right));
+    const items = category.items
+      .filter((item) => {
+        if (normalized.q) {
+          const haystack = [item.skill_id, item.title, item.summary, item.category, ...item.tags].join(" ").toLowerCase();
+          if (!haystack.includes(normalized.q)) {
+            return false;
+          }
+        }
+        if (normalized.risk && item.risk_level !== normalized.risk) {
+          return false;
+        }
+        if (normalized.tag && !item.tags.some((tag) => tag.toLowerCase() === normalized.tag)) {
+          return false;
+        }
+        return true;
+      })
+      .sort((left, right) => sortCategoryItems(left, right, normalized.sort));
+
+    return {
+      slug: category.slug,
+      label: category.label,
+      items,
+      filters: {
+        sort: normalized.sort,
+        q: options.q?.trim() ?? "",
+        risk: options.risk?.trim() ?? "",
+        tag: options.tag?.trim() ?? ""
+      },
+      available_tags: availableTags
+    };
   }
 
   private buildLeaderboard(aggregates: SkillAggregate[], mode: "all_time" | "trending" | "hot", limit: number): CatalogLeaderboardItem[] {
@@ -372,6 +456,43 @@ export class GitLabCatalogService {
   }
 }
 
+function approvalStatus(bundle: VersionBundle): "approved" | "rejected" {
+  return bundle.attestation.approval.decision === "approve" ? "approved" : "rejected";
+}
+
+function scanStatus(bundle: VersionBundle): "clean" | "issues_detected" {
+  return bundle.attestation.scan_issues.length > 0 ? "issues_detected" : "clean";
+}
+
+function sandboxStatus(bundle: VersionBundle): "passed" | "blocked" {
+  return bundle.attestation.sandbox_result.ok ? "passed" : "blocked";
+}
+
+function sortCategoryItems(left: CatalogSkillSummary, right: CatalogSkillSummary, sort: "latest" | "title" | "risk"): number {
+  if (sort === "title") {
+    return left.title.localeCompare(right.title) || right.published_at.localeCompare(left.published_at);
+  }
+  if (sort === "risk") {
+    return riskRank(left.risk_level) - riskRank(right.risk_level) || right.published_at.localeCompare(left.published_at);
+  }
+  return right.published_at.localeCompare(left.published_at) || left.title.localeCompare(right.title);
+}
+
+function normalizeCategoryDetailOptions(options: CategoryDetailOptions): {
+  sort: "latest" | "title" | "risk";
+  q: string;
+  risk: string;
+  tag: string;
+} {
+  const sort = options.sort === "title" || options.sort === "risk" ? options.sort : "latest";
+  return {
+    sort,
+    q: options.q?.trim().toLowerCase() ?? "",
+    risk: options.risk?.trim().toLowerCase() ?? "",
+    tag: options.tag?.trim().toLowerCase() ?? ""
+  };
+}
+
 function computeLeaderboardScore(aggregate: SkillAggregate, mode: "all_time" | "trending" | "hot"): number {
   const latest = aggregate.latest;
   const ageDays = Math.max(0, (Date.now() - Date.parse(latest.record.published_at)) / 86_400_000);
@@ -409,6 +530,19 @@ function riskWeight(risk: RiskLevel): number {
   }
 }
 
+function riskRank(risk: RiskLevel): number {
+  switch (risk) {
+    case "low":
+      return 0;
+    case "medium":
+      return 1;
+    case "high":
+      return 2;
+    case "critical":
+      return 3;
+  }
+}
+
 function trimBase(value?: string): string | undefined {
   return value?.replace(/\/+$/, "");
 }
@@ -435,6 +569,92 @@ function parseSkillMarkdown(skillId: string, markdown: string): ParsedSkillMarkd
     category,
     tags: frontmatter.tags
   };
+}
+
+function renderSkillMarkdown(markdown: string): string {
+  const body = stripFrontmatter(markdown).replace(/\r\n/g, "\n").trim();
+  if (!body) {
+    return "<p>No skill content available.</p>";
+  }
+
+  const lines = body.split("\n");
+  const blocks: string[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith("```")) {
+      const lang = trimmed.slice(3).trim();
+      const code: string[] = [];
+      index += 1;
+      while (index < lines.length && !lines[index].trim().startsWith("```")) {
+        code.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) {
+        index += 1;
+      }
+      const className = lang ? ` class="language-${escapeHtmlAttribute(lang)}"` : "";
+      blocks.push(`<pre><code${className}>${escapeHtml(code.join("\n"))}</code></pre>`);
+      continue;
+    }
+
+    if (/^#{1,6}\s+/.test(trimmed)) {
+      const level = trimmed.match(/^#+/)?.[0].length ?? 1;
+      blocks.push(`<h${level}>${renderInlineMarkdown(trimmed.replace(/^#{1,6}\s+/, ""))}</h${level}>`);
+      index += 1;
+      continue;
+    }
+
+    if (/^-\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (index < lines.length && /^-\s+/.test(lines[index].trim())) {
+        items.push(`<li>${renderInlineMarkdown(lines[index].trim().replace(/^-\s+/, ""))}</li>`);
+        index += 1;
+      }
+      blocks.push(`<ul>${items.join("")}</ul>`);
+      continue;
+    }
+
+    const paragraph: string[] = [trimmed];
+    index += 1;
+    while (index < lines.length) {
+      const next = lines[index].trim();
+      if (!next || next.startsWith("```") || /^#{1,6}\s+/.test(next) || /^-\s+/.test(next)) {
+        break;
+      }
+      paragraph.push(next);
+      index += 1;
+    }
+    blocks.push(`<p>${renderInlineMarkdown(paragraph.join(" "))}</p>`);
+  }
+
+  return blocks.join("\n");
+}
+
+function renderInlineMarkdown(value: string): string {
+  const escaped = escapeHtml(value);
+  return escaped.replace(/`([^`]+)`/g, (_match, code) => `<code>${code}</code>`);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return escapeHtml(value).replaceAll(" `", " ");
 }
 
 function extractFrontmatter(markdown: string): { name?: string; description?: string; category?: string; tags: string[] } {

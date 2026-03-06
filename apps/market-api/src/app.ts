@@ -13,6 +13,7 @@ import {
   reviewSchema,
   type IngestJob,
   type ReviewDecision,
+  type RiskLevel,
   verifyHashSignature
 } from "@skills/shared";
 import type { AppConfig } from "./config.js";
@@ -38,6 +39,7 @@ export function createApp({ config, store }: AppDeps): express.Express {
   const categoriesHtmlPath = join(currentDir, "web", "categories.html");
   const categoryDetailHtmlPath = join(currentDir, "web", "category-detail.html");
   const auditDetailHtmlPath = join(currentDir, "web", "audit-detail.html");
+  const auditVersionDetailHtmlPath = join(currentDir, "web", "audit-version-detail.html");
   const catalog = new GitLabCatalogService({
     rawBaseUrl: config.gitlabRawBaseUrl,
     fetchBaseUrl: config.gitlabFetchBaseUrl
@@ -61,6 +63,11 @@ export function createApp({ config, store }: AppDeps): express.Express {
 
   app.get("/audits", (_req, res) => {
     const page = readFileSync(auditsHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/audits/:skillId/:version", (_req, res) => {
+    const page = readFileSync(auditVersionDetailHtmlPath, "utf8");
     res.type("html").send(page);
   });
 
@@ -139,6 +146,19 @@ export function createApp({ config, store }: AppDeps): express.Express {
     }
   });
 
+  app.get("/api/v1/catalog/audits/:skillId/:version", async (req, res) => {
+    try {
+      const item = await catalog.getAuditVersionDetail(req.params.skillId, req.params.version);
+      if (!item) {
+        return res.status(404).json({ error: "audit version detail not found" });
+      }
+      return res.json(item);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
   app.get("/api/v1/catalog/audits/:skillId", async (req, res) => {
     try {
       const item = await catalog.getAuditDetail(req.params.skillId);
@@ -164,7 +184,16 @@ export function createApp({ config, store }: AppDeps): express.Express {
 
   app.get("/api/v1/catalog/categories/:slug", async (req, res) => {
     try {
-      const item = await catalog.getCategoryDetail(req.params.slug);
+      const sort = req.query.sort === "title" || req.query.sort === "risk" || req.query.sort === "latest" ? req.query.sort : undefined;
+      const q = typeof req.query.q === "string" ? req.query.q : undefined;
+      const risk = typeof req.query.risk === "string" ? req.query.risk : undefined;
+      const tag = typeof req.query.tag === "string" ? req.query.tag : undefined;
+      const item = await catalog.getCategoryDetail(req.params.slug, {
+        sort,
+        q,
+        risk: risk as RiskLevel | undefined,
+        tag
+      });
       if (!item) {
         return res.status(404).json({ error: "category not found" });
       }

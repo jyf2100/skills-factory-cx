@@ -13,12 +13,13 @@ describe("public catalog ui", () => {
     expect(html).toContain("Categories");
   });
 
-  it("contains the skill detail sections", () => {
+  it("contains the skill detail sections and rendered content slot", () => {
     const html = readFileSync(join(process.cwd(), "src", "web", "skill-detail.html"), "utf8");
     expect(html).toContain("Skill Overview");
     expect(html).toContain("Install Command");
     expect(html).toContain("Version History");
     expect(html).toContain("Audit Evidence");
+    expect(html).toContain("Skill Content");
   });
 
   it("contains the leaderboard, audits, and categories pages", () => {
@@ -44,14 +45,21 @@ describe("public catalog ui", () => {
   it("contains independent category and audit detail pages", () => {
     const categoryDetailHtml = readFileSync(join(process.cwd(), "src", "web", "category-detail.html"), "utf8");
     const auditDetailHtml = readFileSync(join(process.cwd(), "src", "web", "audit-detail.html"), "utf8");
+    const auditVersionDetailHtml = readFileSync(join(process.cwd(), "src", "web", "audit-version-detail.html"), "utf8");
 
     expect(categoryDetailHtml).toContain("Category Overview");
     expect(categoryDetailHtml).toContain("Category Skills");
     expect(categoryDetailHtml).toContain("Related Tags");
+    expect(categoryDetailHtml).toContain("Sort By");
+    expect(categoryDetailHtml).toContain("Filter Skills");
 
     expect(auditDetailHtml).toContain("Audit Detail");
     expect(auditDetailHtml).toContain("Latest Decision");
     expect(auditDetailHtml).toContain("Version Audit Timeline");
     expect(auditDetailHtml).toContain("Evidence Summary");
+
+    expect(auditVersionDetailHtml).toContain("Version Audit Detail");
+    expect(auditVersionDetailHtml).toContain("Decision Snapshot");
+    expect(auditVersionDetailHtml).toContain("Evidence Summary");
   });
 });

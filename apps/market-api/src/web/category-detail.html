@@ -5,35 +5,154 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Category Overview</title>
     <style>
-      :root { --bg:#f8fafc; --panel:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; }
-      * { box-sizing:border-box; } body { margin:0; font-family:Inter,system-ui,sans-serif; background:linear-gradient(180deg,#eef2ff 0%,var(--bg) 240px); color:var(--text); }
-      .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 64px; } .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
-      .nav a { color:var(--muted); text-decoration:none; } .nav a.active,.nav a:hover { color:var(--text); }
+      :root { --bg:#f8fafc; --panel:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --brand:#4f46e5; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:Inter,system-ui,sans-serif; background:linear-gradient(180deg,#eef2ff 0%,var(--bg) 240px); color:var(--text); }
+      .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 64px; }
+      .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
+      .nav a { color:var(--muted); text-decoration:none; }
+      .nav a.active,.nav a:hover { color:var(--text); }
       .grid { display:grid; grid-template-columns:minmax(0,2fr) minmax(280px,1fr); gap:16px; }
-      .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; } .list { display:grid; gap:12px; } .item { padding:14px; border-radius:16px; border:1px solid var(--line); }
-      .tags { display:flex; gap:8px; flex-wrap:wrap; } .tag { padding:6px 10px; border-radius:999px; background:#eef2ff; color:#4338ca; font-size:12px; }
-      @media (max-width:980px) { .grid { grid-template-columns:1fr; } }
+      .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; }
+      .list { display:grid; gap:12px; }
+      .item { padding:14px; border-radius:16px; border:1px solid var(--line); }
+      .tags { display:flex; gap:8px; flex-wrap:wrap; }
+      .tag { padding:6px 10px; border-radius:999px; background:#eef2ff; color:#4338ca; font-size:12px; }
+      .filters { display:grid; grid-template-columns:1.4fr repeat(3, minmax(0,1fr)); gap:12px; margin:16px 0 20px; }
+      label { display:grid; gap:6px; font-size:13px; color:var(--muted); }
+      input, select { width:100%; border:1px solid var(--line); border-radius:12px; padding:10px 12px; font:inherit; background:#fff; color:var(--text); }
+      .summary { color:var(--muted); max-width:760px; }
+      .meta { display:flex; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; margin-top:8px; }
+      .actions { display:flex; gap:10px; justify-content:flex-end; }
+      button { border:0; border-radius:12px; padding:10px 14px; font:inherit; cursor:pointer; }
+      .primary { background:var(--brand); color:#fff; }
+      .secondary { background:#e2e8f0; color:#0f172a; }
+      @media (max-width:980px) { .grid, .filters { grid-template-columns:1fr; } }
     </style>
   </head>
   <body>
     <div class="wrap">
       <nav class="nav"><a href="/">Catalog</a><a href="/leaderboard">Leaderboard</a><a href="/audits">Audits</a><a class="active" href="/categories">Categories</a></nav>
       <h1 id="title">Category Overview</h1>
-      <p id="summary" style="color:#64748b;max-width:760px;">Loading category details…</p>
-      <div class="grid">
+      <p id="summary" class="summary">Loading category details…</p>
+
+      <section class="card">
+        <h2>Filter Skills</h2>
+        <form id="filters-form">
+          <div class="filters">
+            <label>Search
+              <input id="q" name="q" type="search" placeholder="Search titles, tags, and summaries" />
+            </label>
+            <label>Sort By
+              <select id="sort" name="sort">
+                <option value="latest">Latest</option>
+                <option value="title">Title</option>
+                <option value="risk">Risk</option>
+              </select>
+            </label>
+            <label>Risk
+              <select id="risk" name="risk">
+                <option value="">All</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </label>
+            <label>Tag
+              <select id="tag" name="tag">
+                <option value="">All tags</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions">
+            <button type="button" id="reset" class="secondary">Reset</button>
+            <button type="submit" class="primary">Apply</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="grid" style="margin-top:16px;">
         <section class="card"><h2>Category Skills</h2><div id="skills" class="list"></div></section>
         <aside class="card"><h2>Related Tags</h2><div id="tags" class="tags"></div></aside>
       </div>
     </div>
     <script>
       const slug = decodeURIComponent(location.pathname.split('/').pop());
+      const form = document.getElementById('filters-form');
+      const qInput = document.getElementById('q');
+      const sortInput = document.getElementById('sort');
+      const riskInput = document.getElementById('risk');
+      const tagInput = document.getElementById('tag');
+      const resetButton = document.getElementById('reset');
       const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-      fetch(`/api/v1/catalog/categories/${encodeURIComponent(slug)}`).then((res) => res.json()).then((payload) => {
+
+      function currentParams() {
+        const params = new URLSearchParams(location.search);
+        return {
+          sort: params.get('sort') || 'latest',
+          q: params.get('q') || '',
+          risk: params.get('risk') || '',
+          tag: params.get('tag') || ''
+        };
+      }
+
+      function syncForm(values) {
+        qInput.value = values.q;
+        sortInput.value = values.sort;
+        riskInput.value = values.risk;
+      }
+
+      function renderTagOptions(tags, selected) {
+        tagInput.innerHTML = [`<option value="">All tags</option>`].concat(tags.map((tag) => `<option value="${esc(tag)}">${esc(tag)}</option>`)).join('');
+        tagInput.value = selected || '';
+      }
+
+      async function loadCategory() {
+        const values = currentParams();
+        syncForm(values);
+        const params = new URLSearchParams();
+        if (values.sort && values.sort !== 'latest') params.set('sort', values.sort);
+        if (values.q) params.set('q', values.q);
+        if (values.risk) params.set('risk', values.risk);
+        if (values.tag) params.set('tag', values.tag);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        const response = await fetch(`/api/v1/catalog/categories/${encodeURIComponent(slug)}${suffix}`);
+        const payload = await response.json();
         document.getElementById('title').textContent = `Category Overview · ${payload.label}`;
-        document.getElementById('summary').textContent = `${payload.items.length} skills currently mapped to this internal category.`;
-        document.getElementById('skills').innerHTML = (payload.items || []).map((item) => `<div class="item"><strong><a href="/skills/${encodeURIComponent(item.skill_id)}" style="color:inherit;text-decoration:none;">${esc(item.title)}</a></strong><div>${esc(item.summary)}</div></div>`).join('');
-        const tags = [...new Set((payload.items || []).flatMap((item) => item.tags || []))];
-        document.getElementById('tags').innerHTML = tags.map((tag) => `<span class="tag">${esc(tag)}</span>`).join('') || '<span style="color:#64748b;">No tags</span>';
+        document.getElementById('summary').textContent = `${payload.items.length} skills currently match this category view.`;
+        renderTagOptions(payload.available_tags || [], payload.filters?.tag || values.tag);
+        document.getElementById('skills').innerHTML = (payload.items || []).map((item) => `<div class="item"><strong><a href="/skills/${encodeURIComponent(item.skill_id)}" style="color:inherit;text-decoration:none;">${esc(item.title)}</a></strong><div>${esc(item.summary)}</div><div class="meta"><span>${esc(item.risk_level)}</span><span>${esc(item.latest_version)}</span><span>${esc(item.tags.join(', ') || 'no tags')}</span></div></div>`).join('') || '<div class="item">No skills match the current filters.</div>';
+        const tags = payload.available_tags?.length ? payload.available_tags : [...new Set((payload.items || []).flatMap((item) => item.tags || []))];
+        document.getElementById('tags').innerHTML = tags.map((tag) => `<button type="button" class="tag" data-tag="${esc(tag)}">${esc(tag)}</button>`).join('') || '<span style="color:#64748b;">No tags</span>';
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const params = new URLSearchParams();
+        if (sortInput.value && sortInput.value !== 'latest') params.set('sort', sortInput.value);
+        if (qInput.value.trim()) params.set('q', qInput.value.trim());
+        if (riskInput.value) params.set('risk', riskInput.value);
+        if (tagInput.value) params.set('tag', tagInput.value);
+        const suffix = params.toString() ? `?${params.toString()}` : '';
+        history.replaceState(null, '', `${location.pathname}${suffix}`);
+        loadCategory();
+      });
+
+      resetButton.addEventListener('click', () => {
+        history.replaceState(null, '', location.pathname);
+        loadCategory();
+      });
+
+      document.getElementById('tags').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-tag]');
+        if (!button) return;
+        tagInput.value = button.getAttribute('data-tag') || '';
+        form.requestSubmit();
+      });
+
+      loadCategory().catch((error) => {
+        document.getElementById('summary').textContent = `Failed to load category detail: ${String(error)}`;
       });
     </script>
   </body>

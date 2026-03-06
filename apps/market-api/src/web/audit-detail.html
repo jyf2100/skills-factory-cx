@@ -30,7 +30,7 @@
         document.getElementById('title').textContent = `Audit Detail · ${payload.title}`;
         document.getElementById('latest').innerHTML = `<strong>${esc(payload.latest_version)}</strong><div class="meta"><span>${esc(payload.latest_review_status)}</span><span>${esc(payload.latest_static_scan_status)}</span><span>${esc(payload.latest_sandbox_status)}</span></div>`;
         document.getElementById('summary').innerHTML = `<div class="meta"><span>${esc(payload.category)}</span><span>${esc(payload.skill_id)}</span></div>`;
-        document.getElementById('timeline').innerHTML = (payload.versions || []).map((item) => `<div class="item"><strong>${esc(item.version)}</strong><div class="meta"><span>${esc(item.reviewer)}</span><span>${esc(item.review_status)}</span><span>${esc(item.static_scan_status)}</span><span>${esc(item.sandbox_status)}</span></div><div>${esc(item.note || '')}</div></div>`).join('');
+        document.getElementById('timeline').innerHTML = (payload.versions || []).map((item) => `<div class="item"><strong><a href="/audits/${encodeURIComponent(payload.skill_id)}/${encodeURIComponent(item.version)}" style="color:inherit;text-decoration:none;">${esc(item.version)}</a></strong><div class="meta"><span>${esc(item.reviewer)}</span><span>${esc(item.review_status)}</span><span>${esc(item.static_scan_status)}</span><span>${esc(item.sandbox_status)}</span></div><div>${esc(item.note || '')}</div></div>`).join('');
       });
     </script>
   </body>

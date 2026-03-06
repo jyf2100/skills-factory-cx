@@ -1,35 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Skills Leaderboard</title>
+    <title>技能排行榜</title>
+    <link rel="stylesheet" href="/assets/theme.css" />
     <style>
-      :root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#94a3b8; --line:rgba(148,163,184,.18); --brand:#38bdf8; --brand2:#8b5cf6; }
-      * { box-sizing:border-box; } body { margin:0; font-family:Inter,system-ui,sans-serif; background:radial-gradient(circle at top, rgba(56,189,248,.15), transparent 32%), var(--bg); color:var(--text); }
-      .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 64px; } .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
-      .nav a { color:var(--muted); text-decoration:none; } .nav a.active, .nav a:hover { color:#fff; }
-      .hero { display:grid; gap:10px; margin-bottom:24px; } h1 { margin:0; font-size:clamp(34px,5vw,56px); }
-      .sub { color:var(--muted); max-width:760px; } .tabs { display:flex; gap:10px; flex-wrap:wrap; margin:20px 0; }
-      .tab { border:1px solid var(--line); background:#0b1220; color:#fff; border-radius:999px; padding:10px 14px; cursor:pointer; }
-      .tab.active { background:linear-gradient(135deg,var(--brand),var(--brand2)); border-color:transparent; }
-      .list { display:grid; gap:14px; } .item { display:grid; grid-template-columns:auto 1fr auto; gap:16px; align-items:center; padding:18px; border-radius:18px; background:rgba(15,23,42,.9); border:1px solid var(--line); }
-      .rank { width:52px; height:52px; display:grid; place-items:center; border-radius:16px; background:linear-gradient(135deg,var(--brand),var(--brand2)); font-weight:800; }
-      .meta { display:flex; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; } .score { text-align:right; } .score strong { display:block; font-size:26px; }
+      .item { grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; }
+      .rank { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); font-weight: 800; }
+      .score { text-align: right; }
+      .score strong { display: block; font-size: 26px; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <nav class="nav"><a href="/">Catalog</a><a class="active" href="/leaderboard">Leaderboard</a><a href="/audits">Audits</a><a href="/categories">Categories</a></nav>
+      <nav class="nav"><a href="/">目录</a><a class="active" href="/leaderboard">排行榜</a><a href="/audits">审计</a><a href="/categories">分类</a></nav>
       <section class="hero">
-        <div style="color:var(--brand);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Internal Rankings</div>
-        <h1>Skills Leaderboard</h1>
-        <div class="sub">Modeled after public leaderboard pages, but ranked only from local GitLab release depth, freshness, and risk posture.</div>
+        <div class="eyebrow">内部榜单</div>
+        <h1>技能排行榜</h1>
+        <div class="sub">完全基于本地 GitLab 发布深度、最近活跃度与风险姿态生成的内部排行榜。</div>
       </section>
       <section class="tabs">
-        <button class="tab active" data-mode="all_time">All Time</button>
-        <button class="tab" data-mode="trending">Trending</button>
-        <button class="tab" data-mode="hot">Hot</button>
+        <button class="tab active" data-mode="all_time">总榜</button>
+        <button class="tab" data-mode="trending">趋势</button>
+        <button class="tab" data-mode="hot">热门</button>
       </section>
       <section id="list" class="list"></section>
     </div>
@@ -37,26 +31,32 @@
       const tabs = [...document.querySelectorAll('.tab')];
       const list = document.getElementById('list');
       const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+      const modeLabel = { all_time: '总榜', trending: '趋势', hot: '热门' };
+      const riskLabel = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
       let payload = null;
       function render(mode) {
         const items = (payload && payload[mode]) || [];
         list.innerHTML = items.map((item) => `
-          <div class="item">
+          <div class="item card">
             <div class="rank">#${item.rank}</div>
             <div>
-              <div class="meta"><span>${esc(item.category)}</span><span>${esc(item.reviewer)}</span><span>${esc(item.latest_version)}</span></div>
-              <h3 style="margin:6px 0 4px;"><a href="/skills/${encodeURIComponent(item.skill_id)}" style="color:white;text-decoration:none;">${esc(item.title)}</a></h3>
-              <div style="color:var(--muted);">${esc(item.summary)}</div>
+              <div class="meta"><span>${esc(item.category)}</span><span>${esc(item.reviewer)}</span><span>版本 ${esc(item.latest_version)}</span><span>${esc(riskLabel[item.risk_level] || item.risk_level)}</span></div>
+              <h3 style="margin:6px 0 4px;"><a href="/skills/${encodeURIComponent(item.skill_id)}" style="text-decoration:none;">${esc(item.title)}</a></h3>
+              <div class="sub">${esc(item.summary)}</div>
             </div>
-            <div class="score"><strong>${esc(item.score)}</strong><span style="color:var(--muted);">${esc(item.score_label)}</span></div>
-          </div>`).join('');
+            <div class="score"><strong>${esc(item.score)}</strong><span class="meta">${esc(modeLabel[mode] || item.score_label)}</span></div>
+          </div>`).join('') || '<div class="card empty">暂无榜单数据。</div>';
       }
       async function load() {
         payload = await fetch('/api/v1/catalog/leaderboard').then((res) => res.json());
         render('all_time');
       }
-      tabs.forEach((tab) => tab.addEventListener('click', () => { tabs.forEach((item) => item.classList.remove('active')); tab.classList.add('active'); render(tab.dataset.mode); }));
-      load();
+      tabs.forEach((tab) => tab.addEventListener('click', () => {
+        tabs.forEach((item) => item.classList.remove('active'));
+        tab.classList.add('active');
+        render(tab.dataset.mode);
+      }));
+      load().catch(() => { list.innerHTML = '<div class="card empty">加载排行榜失败。</div>'; });
     </script>
   </body>
 </html>

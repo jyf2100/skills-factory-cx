@@ -1,37 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Audit Detail</title>
+    <title>审计详情</title>
+    <link rel="stylesheet" href="/assets/theme.css" />
     <style>
-      :root { --bg:#f8fafc; --panel:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; }
-      * { box-sizing:border-box; } body { margin:0; font-family:Inter,system-ui,sans-serif; background:linear-gradient(180deg,#eff6ff 0%,var(--bg) 260px); color:var(--text); }
-      .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 64px; } .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
-      .nav a { color:var(--muted); text-decoration:none; } .nav a.active,.nav a:hover { color:var(--text); }
-      .grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr); gap:16px; }
-      .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; } .timeline { display:grid; gap:12px; } .item { padding:14px; border-radius:16px; border:1px solid var(--line); }
-      .meta { color:#64748b; font-size:13px; display:flex; gap:10px; flex-wrap:wrap; } @media (max-width:980px) { .grid { grid-template-columns:1fr; } }
+      .timeline { display:grid; gap:12px; }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <nav class="nav"><a href="/">Catalog</a><a href="/leaderboard">Leaderboard</a><a class="active" href="/audits">Audits</a><a href="/categories">Categories</a></nav>
-      <h1 id="title">Audit Detail</h1>
-      <div class="grid">
-        <section class="card"><h2>Latest Decision</h2><div id="latest">Loading…</div><h2 style="margin-top:20px;">Evidence Summary</h2><div id="summary"></div></section>
-        <section class="card"><h2>Version Audit Timeline</h2><div id="timeline" class="timeline"></div></section>
+      <nav class="nav"><a href="/">目录</a><a href="/leaderboard">排行榜</a><a class="active" href="/audits">审计</a><a href="/categories">分类</a></nav>
+      <section class="hero">
+        <div class="eyebrow">技能审计</div>
+        <h1 id="title">审计详情</h1>
+      </section>
+      <div class="grid-two">
+        <section class="card"><h2>最新结论</h2><div id="latest">加载中…</div><h2 style="margin-top:20px;">证据摘要</h2><div id="summary"></div></section>
+        <section class="card"><h2>版本审计时间线</h2><div id="timeline" class="timeline"></div></section>
       </div>
     </div>
     <script>
       const skillId = decodeURIComponent(location.pathname.split('/').pop());
       const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+      const reviewLabel = { approved: '已通过', rejected: '已拒绝' };
+      const scanLabel = { clean: '干净', issues_detected: '发现问题' };
+      const sandboxLabel = { passed: '通过', blocked: '阻断' };
       fetch(`/api/v1/catalog/audits/${encodeURIComponent(skillId)}`).then((res) => res.json()).then((payload) => {
-        document.getElementById('title').textContent = `Audit Detail · ${payload.title}`;
-        document.getElementById('latest').innerHTML = `<strong>${esc(payload.latest_version)}</strong><div class="meta"><span>${esc(payload.latest_review_status)}</span><span>${esc(payload.latest_static_scan_status)}</span><span>${esc(payload.latest_sandbox_status)}</span></div>`;
+        document.getElementById('title').textContent = `审计详情 · ${payload.title}`;
+        document.getElementById('latest').innerHTML = `<strong>${esc(payload.latest_version)}</strong><div class="meta"><span>${esc(reviewLabel[payload.latest_review_status] || payload.latest_review_status)}</span><span>${esc(scanLabel[payload.latest_static_scan_status] || payload.latest_static_scan_status)}</span><span>${esc(sandboxLabel[payload.latest_sandbox_status] || payload.latest_sandbox_status)}</span></div>`;
         document.getElementById('summary').innerHTML = `<div class="meta"><span>${esc(payload.category)}</span><span>${esc(payload.skill_id)}</span></div>`;
-        document.getElementById('timeline').innerHTML = (payload.versions || []).map((item) => `<div class="item"><strong><a href="/audits/${encodeURIComponent(payload.skill_id)}/${encodeURIComponent(item.version)}" style="color:inherit;text-decoration:none;">${esc(item.version)}</a></strong><div class="meta"><span>${esc(item.reviewer)}</span><span>${esc(item.review_status)}</span><span>${esc(item.static_scan_status)}</span><span>${esc(item.sandbox_status)}</span></div><div>${esc(item.note || '')}</div></div>`).join('');
-      });
+        document.getElementById('timeline').innerHTML = (payload.versions || []).map((item) => `<div class="item"><strong><a href="/audits/${encodeURIComponent(payload.skill_id)}/${encodeURIComponent(item.version)}" style="text-decoration:none;">${esc(item.version)}</a></strong><div class="meta"><span>${esc(item.reviewer)}</span><span>${esc(reviewLabel[item.review_status] || item.review_status)}</span><span>${esc(scanLabel[item.static_scan_status] || item.static_scan_status)}</span><span>${esc(sandboxLabel[item.sandbox_status] || item.sandbox_status)}</span></div><div class="sub">${esc(item.note || '无补充说明')}</div></div>`).join('') || '<div class="item empty">暂无版本审计记录。</div>';
+      }).catch((error) => { document.getElementById('latest').textContent = `加载审计详情失败：${String(error)}`; });
     </script>
   </body>
 </html>

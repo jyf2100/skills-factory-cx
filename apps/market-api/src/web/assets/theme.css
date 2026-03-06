@@ -1,0 +1,134 @@
+:root {
+  --bg: #0f172a;
+  --panel: rgba(15, 23, 42, 0.88);
+  --panel-strong: rgba(17, 24, 39, 0.96);
+  --panel-soft: rgba(15, 23, 42, 0.62);
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --line: rgba(148, 163, 184, 0.18);
+  --brand: #38bdf8;
+  --brand-2: #8b5cf6;
+  --good-bg: rgba(34, 197, 94, 0.16);
+  --good-text: #86efac;
+  --warn-bg: rgba(249, 115, 22, 0.16);
+  --warn-text: #fdba74;
+  --bad-bg: rgba(239, 68, 68, 0.16);
+  --bad-text: #fca5a5;
+}
+
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: radial-gradient(circle at top, rgba(56,189,248,.15), transparent 32%), var(--bg);
+  color: var(--text);
+}
+
+a { color: inherit; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+.nav { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a.active, .nav a:hover { color: #fff; }
+.hero { display: grid; gap: 12px; margin: 20px 0 26px; }
+.eyebrow {
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+h1 { margin: 0; font-size: clamp(34px, 5vw, 56px); line-height: 1.05; }
+h2 { margin: 0 0 14px; font-size: 22px; }
+h3 { margin: 0; font-size: 18px; }
+.sub { color: var(--muted); max-width: 760px; }
+.card {
+  background: linear-gradient(180deg, var(--panel-strong), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.2);
+}
+.grid-two { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr); }
+.grid-three { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.list { display: grid; gap: 14px; }
+.item {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(15, 23, 42, 0.72);
+}
+.meta { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.pill, .badge, .tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.approved, .clean, .passed, .low { background: var(--good-bg); color: var(--good-text); }
+.issues_detected, .medium { background: var(--warn-bg); color: var(--warn-text); }
+.blocked, .rejected, .high, .critical { background: var(--bad-bg); color: var(--bad-text); }
+.tabs { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+.tab, .button, button {
+  border: 1px solid var(--line);
+  background: #0b1220;
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+.tab.active, .button.primary, button.primary {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  border-color: transparent;
+}
+.button.secondary, button.secondary { background: rgba(15, 23, 42, 0.72); }
+input, select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+  background: rgba(2, 6, 23, 0.42);
+  color: var(--text);
+}
+label { display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
+pre, code {
+  background: rgba(2, 6, 23, 0.6);
+  color: #dbeafe;
+  border-radius: 14px;
+}
+pre { margin: 0; padding: 14px; overflow: auto; }
+.table { display: grid; gap: 12px; }
+.row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.84);
+  border: 1px solid var(--line);
+}
+.row.header {
+  background: transparent;
+  border: 0;
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.empty { color: var(--muted); }
+.section-title { display:flex; align-items:center; justify-content:space-between; gap: 14px; margin-bottom: 14px; }
+@media (max-width: 980px) {
+  .grid-two, .grid-three { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr !important; }
+  .row.header { display: none; }
+}

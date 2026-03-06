@@ -3,63 +3,71 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("public catalog ui", () => {
-  it("contains the directory homepage sections", () => {
+  it("contains the localized directory homepage sections", () => {
     const html = readFileSync(join(process.cwd(), "src", "web", "catalog.html"), "utf8");
-    expect(html).toContain("Browse Skills");
-    expect(html).toContain("Search skills");
-    expect(html).toContain("Recently Published");
-    expect(html).toContain("Latest Audits");
-    expect(html).toContain("Leaderboard");
-    expect(html).toContain("Categories");
+    expect(html).toContain("技能目录");
+    expect(html).toContain("搜索技能");
+    expect(html).toContain("最新发布");
+    expect(html).toContain("最新审计");
+    expect(html).toContain("排行榜");
+    expect(html).toContain("分类");
+    expect(html).toContain('/assets/theme.css');
   });
 
-  it("contains the skill detail sections and rendered content slot", () => {
+  it("contains the localized skill detail sections and rendered content slot", () => {
     const html = readFileSync(join(process.cwd(), "src", "web", "skill-detail.html"), "utf8");
-    expect(html).toContain("Skill Overview");
-    expect(html).toContain("Install Command");
-    expect(html).toContain("Version History");
-    expect(html).toContain("Audit Evidence");
-    expect(html).toContain("Skill Content");
+    expect(html).toContain("技能概览");
+    expect(html).toContain("安装命令");
+    expect(html).toContain("版本历史");
+    expect(html).toContain("审计证据");
+    expect(html).toContain("技能内容");
+    expect(html).toContain('/assets/theme.css');
   });
 
-  it("contains the leaderboard, audits, and categories pages", () => {
+  it("contains the localized leaderboard, audits, and categories pages", () => {
     const leaderboardHtml = readFileSync(join(process.cwd(), "src", "web", "leaderboard.html"), "utf8");
     const auditsHtml = readFileSync(join(process.cwd(), "src", "web", "audits.html"), "utf8");
     const categoriesHtml = readFileSync(join(process.cwd(), "src", "web", "categories.html"), "utf8");
 
-    expect(leaderboardHtml).toContain("Skills Leaderboard");
-    expect(leaderboardHtml).toContain("All Time");
-    expect(leaderboardHtml).toContain("Trending");
-    expect(leaderboardHtml).toContain("Hot");
+    expect(leaderboardHtml).toContain("技能排行榜");
+    expect(leaderboardHtml).toContain("总榜");
+    expect(leaderboardHtml).toContain("趋势");
+    expect(leaderboardHtml).toContain("热门");
+    expect(leaderboardHtml).toContain('/assets/theme.css');
 
-    expect(auditsHtml).toContain("Audit Center");
-    expect(auditsHtml).toContain("Review Status");
-    expect(auditsHtml).toContain("Static Scan");
-    expect(auditsHtml).toContain("Sandbox");
+    expect(auditsHtml).toContain("审计中心");
+    expect(auditsHtml).toContain("审核状态");
+    expect(auditsHtml).toContain("静态扫描");
+    expect(auditsHtml).toContain("沙箱");
+    expect(auditsHtml).toContain('/assets/theme.css');
 
-    expect(categoriesHtml).toContain("Browse by Category");
-    expect(categoriesHtml).toContain("Featured Categories");
-    expect(categoriesHtml).toContain("Category Skills");
+    expect(categoriesHtml).toContain("按分类浏览");
+    expect(categoriesHtml).toContain("重点分类");
+    expect(categoriesHtml).toContain("分类技能");
+    expect(categoriesHtml).toContain('/assets/theme.css');
   });
 
-  it("contains independent category and audit detail pages", () => {
+  it("contains localized independent category and audit detail pages", () => {
     const categoryDetailHtml = readFileSync(join(process.cwd(), "src", "web", "category-detail.html"), "utf8");
     const auditDetailHtml = readFileSync(join(process.cwd(), "src", "web", "audit-detail.html"), "utf8");
     const auditVersionDetailHtml = readFileSync(join(process.cwd(), "src", "web", "audit-version-detail.html"), "utf8");
 
-    expect(categoryDetailHtml).toContain("Category Overview");
-    expect(categoryDetailHtml).toContain("Category Skills");
-    expect(categoryDetailHtml).toContain("Related Tags");
-    expect(categoryDetailHtml).toContain("Sort By");
-    expect(categoryDetailHtml).toContain("Filter Skills");
+    expect(categoryDetailHtml).toContain("分类概览");
+    expect(categoryDetailHtml).toContain("分类技能");
+    expect(categoryDetailHtml).toContain("相关标签");
+    expect(categoryDetailHtml).toContain("排序方式");
+    expect(categoryDetailHtml).toContain("筛选技能");
+    expect(categoryDetailHtml).toContain('/assets/theme.css');
 
-    expect(auditDetailHtml).toContain("Audit Detail");
-    expect(auditDetailHtml).toContain("Latest Decision");
-    expect(auditDetailHtml).toContain("Version Audit Timeline");
-    expect(auditDetailHtml).toContain("Evidence Summary");
+    expect(auditDetailHtml).toContain("审计详情");
+    expect(auditDetailHtml).toContain("最新结论");
+    expect(auditDetailHtml).toContain("版本审计时间线");
+    expect(auditDetailHtml).toContain("证据摘要");
+    expect(auditDetailHtml).toContain('/assets/theme.css');
 
-    expect(auditVersionDetailHtml).toContain("Version Audit Detail");
-    expect(auditVersionDetailHtml).toContain("Decision Snapshot");
-    expect(auditVersionDetailHtml).toContain("Evidence Summary");
+    expect(auditVersionDetailHtml).toContain("版本审计详情");
+    expect(auditVersionDetailHtml).toContain("结论快照");
+    expect(auditVersionDetailHtml).toContain("证据摘要");
+    expect(auditVersionDetailHtml).toContain('/assets/theme.css');
   });
 });

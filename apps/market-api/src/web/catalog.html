@@ -1,184 +1,133 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Browse Skills</title>
+    <title>技能目录</title>
+    <link rel="stylesheet" href="/assets/theme.css" />
     <style>
-      :root {
-        --bg: #f6f7fb;
-        --panel: #ffffff;
-        --panel-soft: #eef2ff;
-        --text: #101828;
-        --muted: #667085;
-        --line: #d0d5dd;
-        --brand: #2563eb;
-        --brand-2: #7c3aed;
-        --good: #16a34a;
-        --warn: #ea580c;
-        --bad: #dc2626;
-      }
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 240px); color: var(--text); }
-      .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 20px 64px; }
-      .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
-      .nav a { color: var(--muted); text-decoration:none; }
-      .nav a.active, .nav a:hover { color: var(--text); }
-      .hero { display: grid; gap: 16px; margin-bottom: 28px; }
-      .eyebrow { color: var(--brand); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-      h1 { margin: 0; font-size: clamp(36px, 6vw, 56px); line-height: 1.05; }
-      .sub { max-width: 760px; color: var(--muted); font-size: 18px; }
       .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-      input { flex: 1; min-width: 260px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: white; font-size: 16px; }
-      .button { padding: 14px 18px; border-radius: 14px; border: 0; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; font-weight: 700; }
-      .stats, .grid { display: grid; gap: 16px; }
-      .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 24px 0; }
-      .grid { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); }
-      .card { background: var(--panel); border: 1px solid rgba(16, 24, 40, 0.06); border-radius: 20px; padding: 20px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06); }
+      .toolbar input { flex: 1; min-width: 260px; }
+      .stats { display: grid; gap: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 24px 0; }
       .stat-value { font-size: 28px; font-weight: 800; }
       .stat-label { color: var(--muted); }
-      .section-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-      .skills { display: grid; gap: 14px; }
-      .skill { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; text-decoration: none; color: inherit; background: linear-gradient(180deg, white, #fbfcff); }
       .skill h3 { margin: 0; font-size: 20px; }
-      .meta, .audit-meta { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
-      .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-      .low { background: #dcfce7; color: var(--good); }
-      .medium { background: #ffedd5; color: var(--warn); }
-      .high, .critical { background: #fee2e2; color: var(--bad); }
+      .grid-main { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); }
       .audit-list { display: grid; gap: 12px; }
-      .audit { padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: #fafafa; }
-      .muted { color: var(--muted); }
-      @media (max-width: 980px) { .stats, .grid { grid-template-columns: 1fr; } }
+      .audit { padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(15, 23, 42, 0.72); }
+      @media (max-width: 980px) { .stats, .grid-main { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <nav class="nav"><a class="active" href="/">Catalog</a><a href="/leaderboard">Leaderboard</a><a href="/audits">Audits</a><a href="/categories">Categories</a></nav>
+      <nav class="nav"><a class="active" href="/">目录</a><a href="/leaderboard">排行榜</a><a href="/audits">审计</a><a href="/categories">分类</a></nav>
       <section class="hero">
-        <div class="eyebrow">Internal Skills Catalog</div>
-        <h1>Browse Skills</h1>
-        <div class="sub">An internal catalog modeled after skills discovery products, but sourced directly from your local GitLab-published skills repository.</div>
+        <div class="eyebrow">内部技能市场</div>
+        <h1>技能目录</h1>
+        <div class="sub">面向内部团队的技能目录，数据直接来自本地 GitLab 发布仓库，并联动审计与分类视图。</div>
         <div class="toolbar">
-          <input id="search" type="search" placeholder="Search skills" />
-          <button id="refresh" class="button">Refresh Catalog</button>
+          <input id="search" type="search" placeholder="搜索技能" />
+          <button id="refresh" class="button primary">刷新目录</button>
         </div>
       </section>
 
       <section class="stats" id="stats">
-        <div class="card"><div class="stat-value" id="stat-skills">0</div><div class="stat-label">Published Skills</div></div>
-        <div class="card"><div class="stat-value" id="stat-versions">0</div><div class="stat-label">Tracked Versions</div></div>
-        <div class="card"><div class="stat-value" id="stat-reviewed">0</div><div class="stat-label">Reviewed Releases</div></div>
-        <div class="card"><div class="stat-value" id="stat-scans">0</div><div class="stat-label">Flagged Scan Issues</div></div>
+        <div class="card"><div class="stat-value" id="stat-skills">0</div><div class="stat-label">已发布技能</div></div>
+        <div class="card"><div class="stat-value" id="stat-versions">0</div><div class="stat-label">跟踪版本</div></div>
+        <div class="card"><div class="stat-value" id="stat-reviewed">0</div><div class="stat-label">已审版本</div></div>
+        <div class="card"><div class="stat-value" id="stat-scans">0</div><div class="stat-label">扫描告警</div></div>
       </section>
 
-      <section class="grid">
+      <section class="grid-main">
         <div class="card">
-          <div class="section-title">
-            <div>
-              <h2>Recently Published</h2>
-              <div class="muted">Latest packages from the internal GitLab-backed index.</div>
-            </div>
-          </div>
-          <div id="skills" class="skills"></div>
+          <div class="section-title"><h2>最新发布</h2><a href="/leaderboard" class="meta">查看排行榜 →</a></div>
+          <div id="skills" class="list"></div>
         </div>
 
-        <div class="card">
-          <div class="section-title">
-            <div>
-              <h2>Latest Audits</h2>
-              <div class="muted">Recent approvals and risk evidence.</div>
-            </div>
+        <div class="list">
+          <div class="card">
+            <div class="section-title"><h2>最新审计</h2><a href="/audits" class="meta">进入审计中心 →</a></div>
+            <div id="audits" class="audit-list"></div>
           </div>
-          <div id="audits" class="audit-list"></div>
+          <div class="card">
+            <div class="section-title"><h2>分类</h2><a href="/categories" class="meta">查看全部分类 →</a></div>
+            <div id="categories" class="list"></div>
+          </div>
         </div>
       </section>
     </div>
 
     <script>
+      const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+      const riskLabel = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
+      const reviewLabel = { approved: '已通过', rejected: '已拒绝' };
+      const scanLabel = { clean: '干净', issues_detected: '发现问题' };
+      const sandboxLabel = { passed: '通过', blocked: '阻断' };
       const searchInput = document.getElementById('search');
       const refreshButton = document.getElementById('refresh');
-      const skillsContainer = document.getElementById('skills');
-      const auditsContainer = document.getElementById('audits');
-
-      const riskClass = (value) => value || 'low';
-      const formatDate = (value) => new Date(value).toLocaleString();
-
-      function escapeHtml(value) {
-        return value
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#39;');
-      }
-
-      function renderStats(items, audits) {
-        document.getElementById('stat-skills').textContent = String(items.length);
-        document.getElementById('stat-versions').textContent = String(items.reduce((sum, item) => sum + item.versions_count, 0));
-        document.getElementById('stat-reviewed').textContent = String(audits.length);
-        document.getElementById('stat-scans').textContent = String(items.reduce((sum, item) => sum + item.scan_issue_count, 0));
-      }
+      const skillsEl = document.getElementById('skills');
+      const auditsEl = document.getElementById('audits');
+      const categoriesEl = document.getElementById('categories');
 
       function renderSkills(items) {
-        if (!items.length) {
-          skillsContainer.innerHTML = '<div class="muted">No skills found.</div>';
-          return;
-        }
-        skillsContainer.innerHTML = items.map((item) => `
-          <a class="skill" href="/skills/${encodeURIComponent(item.skill_id)}">
-            <div class="meta">
-              <span class="badge ${riskClass(item.risk_level)}">${escapeHtml(item.risk_level)}</span>
-              <span>v${escapeHtml(item.latest_version)}</span>
-              <span>${escapeHtml(item.reviewer)}</span>
-              <span>${escapeHtml(String(item.versions_count))} versions</span>
-            </div>
-            <h3>${escapeHtml(item.title)}</h3>
-            <div>${escapeHtml(item.summary)}</div>
-            <div class="meta">
-              <span>${escapeHtml(item.skill_id)}</span>
-              <span>${escapeHtml(formatDate(item.published_at))}</span>
-            </div>
-          </a>
-        `).join('');
+        skillsEl.innerHTML = items.map((item) => `
+          <a class="item skill" href="/skills/${encodeURIComponent(item.skill_id)}">
+            <div class="meta"><span>${esc(item.category)}</span><span>${esc(item.reviewer)}</span><span>版本 ${esc(item.latest_version)}</span></div>
+            <h3>${esc(item.title)}</h3>
+            <div class="sub">${esc(item.summary)}</div>
+            <div class="meta"><span class="pill ${esc(item.risk_level)}">${esc(riskLabel[item.risk_level] || item.risk_level)}</span><span>${esc((item.tags || []).join(' / ') || '无标签')}</span></div>
+          </a>`).join('') || '<div class="empty">暂无技能。</div>';
       }
 
       function renderAudits(items) {
-        if (!items.length) {
-          auditsContainer.innerHTML = '<div class="muted">No audits yet.</div>';
-          return;
-        }
-        auditsContainer.innerHTML = items.map((item) => `
-          <div class="audit">
-            <strong>${escapeHtml(item.title)}</strong>
-            <div class="audit-meta">
-              <span>${escapeHtml(item.version)}</span>
-              <span>${escapeHtml(item.reviewer)}</span>
-              <span>${escapeHtml(formatDate(item.reviewed_at))}</span>
-            </div>
-            <div class="muted">${escapeHtml(item.note || 'Approved for internal distribution.')}</div>
-          </div>
-        `).join('');
+        auditsEl.innerHTML = items.map((item) => `
+          <a class="audit" href="/audits/${encodeURIComponent(item.skill_id)}" style="text-decoration:none;display:grid;gap:8px;">
+            <strong>${esc(item.title)}</strong>
+            <div class="meta"><span>版本 ${esc(item.version)}</span><span>${esc(item.reviewer)}</span><span>${esc(item.category)}</span></div>
+            <div class="meta"><span class="pill ${esc(item.review_status)}">${esc(reviewLabel[item.review_status] || item.review_status)}</span><span class="pill ${esc(item.static_scan_status)}">${esc(scanLabel[item.static_scan_status] || item.static_scan_status)}</span><span class="pill ${esc(item.sandbox_status)}">${esc(sandboxLabel[item.sandbox_status] || item.sandbox_status)}</span></div>
+          </a>`).join('') || '<div class="empty">暂无审计记录。</div>';
+      }
+
+      function renderCategories(items) {
+        categoriesEl.innerHTML = items.slice(0, 4).map((item) => `
+          <a class="item" href="/categories/${encodeURIComponent(item.slug)}" style="text-decoration:none;">
+            <strong>${esc(item.label)}</strong>
+            <div class="meta"><span>${esc(String(item.skills_count))} 个技能</span><span>最近发布 ${esc(new Date(item.latest_published_at).toLocaleDateString())}</span></div>
+          </a>`).join('') || '<div class="empty">暂无分类。</div>';
+      }
+
+      function updateStats(skills, audits) {
+        document.getElementById('stat-skills').textContent = String(skills.length);
+        document.getElementById('stat-versions').textContent = String(skills.reduce((total, item) => total + item.versions_count, 0));
+        document.getElementById('stat-reviewed').textContent = String(audits.length);
+        document.getElementById('stat-scans').textContent = String(audits.reduce((total, item) => total + item.scan_issue_count, 0));
       }
 
       async function loadCatalog() {
         const query = searchInput.value.trim();
-        const queryString = query ? `?query=${encodeURIComponent(query)}` : '';
-        const [skillsResponse, auditsResponse] = await Promise.all([
-          fetch(`/api/v1/catalog/skills${queryString}`),
-          fetch('/api/v1/catalog/audits')
+        const suffix = query ? `?query=${encodeURIComponent(query)}` : '';
+        const [skillsPayload, auditsPayload, categoriesPayload] = await Promise.all([
+          fetch(`/api/v1/catalog/skills${suffix}`).then((res) => res.json()),
+          fetch('/api/v1/catalog/audits?limit=6').then((res) => res.json()),
+          fetch('/api/v1/catalog/categories').then((res) => res.json())
         ]);
-        const skillsPayload = await skillsResponse.json();
-        const auditsPayload = await auditsResponse.json();
-        renderStats(skillsPayload.items || [], auditsPayload.items || []);
-        renderSkills(skillsPayload.items || []);
-        renderAudits(auditsPayload.items || []);
+        const skills = skillsPayload.items || [];
+        const audits = auditsPayload.items || [];
+        const categories = categoriesPayload.items || [];
+        renderSkills(skills);
+        renderAudits(audits);
+        renderCategories(categories);
+        updateStats(skills, audits);
       }
 
+      searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') loadCatalog();
+      });
       refreshButton.addEventListener('click', loadCatalog);
-      searchInput.addEventListener('input', () => { window.clearTimeout(window.__catalogTimer); window.__catalogTimer = window.setTimeout(loadCatalog, 150); });
-      loadCatalog().catch((error) => {
-        skillsContainer.innerHTML = `<div class="muted">Failed to load catalog: ${escapeHtml(String(error))}</div>`;
+      loadCatalog().catch(() => {
+        skillsEl.innerHTML = '<div class="empty">加载目录失败。</div>';
+        auditsEl.innerHTML = '<div class="empty">加载审计失败。</div>';
+        categoriesEl.innerHTML = '<div class="empty">加载分类失败。</div>';
       });
     </script>
   </body>

@@ -1,66 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Skill Overview</title>
+    <title>技能概览</title>
+    <link rel="stylesheet" href="/assets/theme.css" />
     <style>
-      :root { --bg: #0b1120; --panel: #111827; --panel-2: #172554; --text: #e5e7eb; --muted: #94a3b8; --line: rgba(148,163,184,0.2); --brand: #38bdf8; --brand-2: #818cf8; }
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: radial-gradient(circle at top, rgba(56,189,248,0.12), transparent 30%), var(--bg); color: var(--text); }
-      .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 20px 64px; }
-      .back { color: var(--brand); text-decoration: none; }
-      .hero { display: grid; gap: 12px; margin: 20px 0 26px; }
-      h1 { margin: 0; font-size: clamp(34px, 5vw, 52px); }
-      .sub { color: var(--muted); max-width: 760px; }
-      .grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.9fr); }
-      .card { background: linear-gradient(180deg, rgba(17,24,39,0.96), rgba(17,24,39,0.88)); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
-      .label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-      .command, pre { margin: 0; padding: 14px; border-radius: 14px; background: rgba(2, 6, 23, 0.6); overflow: auto; }
-      .version-list, .audit-list { display: grid; gap: 12px; }
-      .version, .audit { padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(15, 23, 42, 0.8); }
-      .meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 13px; }
       .markdown { line-height: 1.7; color: #dbeafe; }
       .markdown h1, .markdown h2, .markdown h3 { color: #ffffff; margin-top: 0; }
       .markdown p, .markdown ul { margin: 0 0 14px; }
       .markdown code { padding: 0.15rem 0.45rem; border-radius: 8px; background: rgba(15, 23, 42, 0.95); color: #bae6fd; }
       .markdown pre { margin-bottom: 14px; }
       .markdown pre code { display: block; padding: 0; background: transparent; }
-      @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <a class="back" href="/">← Back to catalog</a>
+      <nav class="nav"><a href="/">目录</a><a href="/leaderboard">排行榜</a><a href="/audits">审计</a><a href="/categories">分类</a></nav>
       <section class="hero">
-        <div class="label">Internal Skill Detail</div>
-        <h1 id="title">Skill Overview</h1>
-        <div id="summary" class="sub">Loading skill details from local GitLab…</div>
+        <div class="eyebrow">技能详情</div>
+        <h1 id="title">技能概览</h1>
+        <div id="summary" class="sub">正在从本地 GitLab 加载技能详情…</div>
       </section>
 
-      <section class="grid">
+      <section class="grid-two">
         <div class="card">
-          <h2>Skill Overview</h2>
+          <h2>技能概览</h2>
           <div id="overview" class="meta"></div>
-          <h2 style="margin-top:20px;">Skill Content</h2>
-          <article id="readme-html" class="markdown">Loading…</article>
+          <h2 style="margin-top:20px;">技能内容</h2>
+          <article id="readme-html" class="markdown">加载中…</article>
         </div>
 
-        <div class="card" style="display:grid; gap: 16px; align-content:start;">
+        <div class="card" style="display:grid; gap:16px; align-content:start;">
           <div>
-            <h2>Install Command</h2>
-            <pre id="install-command" class="command">Loading…</pre>
+            <h2>安装命令</h2>
+            <pre id="install-command">加载中…</pre>
           </div>
           <div>
-            <h2>Audit Evidence</h2>
-            <div id="audit-evidence" class="audit-list"></div>
+            <h2>审计证据</h2>
+            <div id="audit-evidence" class="list"></div>
           </div>
         </div>
       </section>
 
-      <section class="card" style="margin-top: 16px;">
-        <h2>Version History</h2>
-        <div id="versions" class="version-list"></div>
+      <section class="card" style="margin-top:16px;">
+        <h2>版本历史</h2>
+        <div id="versions" class="list"></div>
       </section>
     </div>
 
@@ -73,19 +58,9 @@
       const installCommandEl = document.getElementById('install-command');
       const versionsEl = document.getElementById('versions');
       const auditEvidenceEl = document.getElementById('audit-evidence');
-
-      function escapeHtml(value) {
-        return String(value)
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#39;');
-      }
-
-      function formatDate(value) {
-        return new Date(value).toLocaleString();
-      }
+      const esc = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+      const riskLabel = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
+      const formatDate = (value) => new Date(value).toLocaleString('zh-CN');
 
       async function loadDetail() {
         const response = await fetch(`/api/v1/catalog/skills/${encodeURIComponent(skillId)}`);
@@ -93,41 +68,39 @@
         titleEl.textContent = payload.title;
         summaryEl.textContent = payload.summary;
         overviewEl.innerHTML = [
-          `<span>${escapeHtml(payload.category || 'uncategorized')}</span>`,
-          `<span>${escapeHtml(payload.risk_level)}</span>`,
-          `<span>${escapeHtml(payload.latest_version)}</span>`,
-          `<span>${escapeHtml(formatDate(payload.published_at))}</span>`
+          `<span>${esc(payload.category || '未分类')}</span>`,
+          `<span>${esc(riskLabel[payload.risk_level] || payload.risk_level)}</span>`,
+          `<span>当前版本 ${esc(payload.latest_version)}</span>`,
+          `<span>${esc(formatDate(payload.published_at))}</span>`
         ].join('');
-        readmeEl.innerHTML = payload.readme_html || '<p>No skill content available.</p>';
+        readmeEl.innerHTML = payload.readme_html || '<p>暂无技能内容。</p>';
         installCommandEl.textContent = payload.install_command;
         versionsEl.innerHTML = payload.versions.map((version) => `
-          <div class="version">
-            <strong>${escapeHtml(version.version)}</strong>
+          <div class="item">
+            <strong>${esc(version.version)}</strong>
             <div class="meta">
-              <span>${escapeHtml(version.risk_level)}</span>
-              <span>${escapeHtml(version.reviewer)}</span>
-              <span>${escapeHtml(formatDate(version.published_at))}</span>
+              <span>${esc(riskLabel[version.risk_level] || version.risk_level)}</span>
+              <span>${esc(version.reviewer)}</span>
+              <span>${esc(formatDate(version.published_at))}</span>
             </div>
             <div class="meta">
-              <span>${escapeHtml(version.source_url)}</span>
-              <span>${escapeHtml(version.package_url)}</span>
+              <span>${esc(version.source_url)}</span>
+              <span>${esc(version.package_url)}</span>
             </div>
-          </div>
-        `).join('');
+          </div>`).join('') || '<div class="empty">暂无版本信息。</div>';
         auditEvidenceEl.innerHTML = payload.versions.map((version) => `
-          <div class="audit">
-            <strong>${escapeHtml(version.version)}</strong>
+          <div class="item">
+            <strong>${esc(version.version)}</strong>
             <div class="meta">
-              <span>${escapeHtml(version.reviewer)}</span>
-              <span>${escapeHtml(version.note || 'Approved')}</span>
-              <span>${escapeHtml(String(version.scan_issue_count))} scan issues</span>
+              <span>${esc(version.reviewer)}</span>
+              <span>${esc(version.note || '已通过')}</span>
+              <span>${esc(String(version.scan_issue_count))} 个扫描问题</span>
             </div>
-          </div>
-        `).join('');
+          </div>`).join('') || '<div class="empty">暂无审计证据。</div>';
       }
 
       loadDetail().catch((error) => {
-        summaryEl.textContent = `Failed to load skill detail: ${String(error)}`;
+        summaryEl.textContent = `加载技能详情失败：${String(error)}`;
       });
     </script>
   </body>

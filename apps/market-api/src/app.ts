@@ -45,6 +45,7 @@ export function createApp({ config, store }: AppDeps): express.Express {
     fetchBaseUrl: config.gitlabFetchBaseUrl
   });
   app.use(express.json({ limit: "2mb" }));
+  app.use("/assets", express.static(join(currentDir, "web", "assets")));
 
   app.get("/", (_req, res) => {
     const page = readFileSync(catalogHtmlPath, "utf8");

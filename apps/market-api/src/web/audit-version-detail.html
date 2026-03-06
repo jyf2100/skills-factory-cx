@@ -1,49 +1,38 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Version Audit Detail</title>
-    <style>
-      :root { --bg:#f8fafc; --panel:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; }
-      * { box-sizing:border-box; }
-      body { margin:0; font-family:Inter,system-ui,sans-serif; background:linear-gradient(180deg,#eff6ff 0%,var(--bg) 260px); color:var(--text); }
-      .wrap { max-width:1180px; margin:0 auto; padding:32px 20px 64px; }
-      .nav { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
-      .nav a { color:var(--muted); text-decoration:none; }
-      .nav a.active,.nav a:hover { color:var(--text); }
-      .grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:16px; }
-      .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; }
-      .meta { color:#64748b; font-size:13px; display:flex; gap:10px; flex-wrap:wrap; }
-      .stack { display:grid; gap:14px; }
-      code, pre { border-radius:12px; background:#eff6ff; padding:12px; overflow:auto; }
-      @media (max-width:980px) { .grid { grid-template-columns:1fr; } }
-    </style>
+    <title>版本审计详情</title>
+    <link rel="stylesheet" href="/assets/theme.css" />
   </head>
   <body>
     <div class="wrap">
-      <nav class="nav"><a href="/">Catalog</a><a href="/leaderboard">Leaderboard</a><a class="active" href="/audits">Audits</a><a href="/categories">Categories</a></nav>
-      <h1 id="title">Version Audit Detail</h1>
-      <p id="summary" class="meta">Loading version-level audit detail…</p>
-      <div class="grid">
-        <section class="card stack">
+      <nav class="nav"><a href="/">目录</a><a href="/leaderboard">排行榜</a><a class="active" href="/audits">审计</a><a href="/categories">分类</a></nav>
+      <section class="hero">
+        <div class="eyebrow">版本审计</div>
+        <h1 id="title">版本审计详情</h1>
+        <p id="summary" class="meta">正在加载版本级审计详情…</p>
+      </section>
+      <div class="grid-two">
+        <section class="card" style="display:grid;gap:14px;">
           <div>
-            <h2>Decision Snapshot</h2>
+            <h2>结论快照</h2>
             <div id="decision"></div>
           </div>
           <div>
-            <h2>Evidence Summary</h2>
+            <h2>证据摘要</h2>
             <div id="evidence"></div>
           </div>
         </section>
-        <aside class="card stack">
+        <aside class="card" style="display:grid;gap:14px;">
           <div>
-            <h2>Artifact Links</h2>
-            <div id="links"></div>
+            <h2>关联链接</h2>
+            <div id="links" class="list"></div>
           </div>
           <div>
-            <h2>Published Package</h2>
-            <pre id="package-url">Loading…</pre>
+            <h2>发布包</h2>
+            <pre id="package-url">加载中…</pre>
           </div>
         </aside>
       </div>
@@ -53,20 +42,24 @@
       const skillId = decodeURIComponent(parts[1] || '');
       const version = decodeURIComponent(parts[2] || '');
       const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-      const fmt = (value) => new Date(value).toLocaleString();
+      const fmt = (value) => new Date(value).toLocaleString('zh-CN');
+      const reviewLabel = { approved: '已通过', rejected: '已拒绝' };
+      const scanLabel = { clean: '干净', issues_detected: '发现问题' };
+      const sandboxLabel = { passed: '通过', blocked: '阻断' };
+      const riskLabel = { low: '低风险', medium: '中风险', high: '高风险', critical: '严重风险' };
 
       fetch(`/api/v1/catalog/audits/${encodeURIComponent(skillId)}/${encodeURIComponent(version)}`)
         .then((res) => res.json())
         .then((payload) => {
-          document.getElementById('title').textContent = `Version Audit Detail · ${payload.title} ${payload.version}`;
+          document.getElementById('title').textContent = `版本审计详情 · ${payload.title} ${payload.version}`;
           document.getElementById('summary').innerHTML = `<span>${esc(payload.category)}</span><span>${esc(payload.skill_id)}</span><span>${esc(fmt(payload.published_at))}</span>`;
-          document.getElementById('decision').innerHTML = `<strong>${esc(payload.review_status)}</strong><div class="meta"><span>${esc(payload.sandbox_status)}</span><span>${esc(payload.static_scan_status)}</span><span>${esc(payload.risk_level)}</span><span>${esc(payload.reviewer)}</span></div><p>${esc(payload.note || 'No additional reviewer note.')}</p>`;
-          document.getElementById('evidence').innerHTML = `<div class="meta"><span>${esc(String(payload.scan_issue_count))} scan issues</span><span>Reviewed ${esc(fmt(payload.reviewed_at))}</span></div>`;
-          document.getElementById('links').innerHTML = `<div class="stack"><a href="${esc(payload.source_url)}" target="_blank" rel="noreferrer">Source Repository</a><a href="/audits/${encodeURIComponent(payload.skill_id)}">Back to Skill Audit</a></div>`;
+          document.getElementById('decision').innerHTML = `<strong>${esc(reviewLabel[payload.review_status] || payload.review_status)}</strong><div class="meta"><span>${esc(sandboxLabel[payload.sandbox_status] || payload.sandbox_status)}</span><span>${esc(scanLabel[payload.static_scan_status] || payload.static_scan_status)}</span><span>${esc(riskLabel[payload.risk_level] || payload.risk_level)}</span><span>${esc(payload.reviewer)}</span></div><p class="sub">${esc(payload.note || '无额外审核说明。')}</p>`;
+          document.getElementById('evidence').innerHTML = `<div class="meta"><span>${esc(String(payload.scan_issue_count))} 个扫描问题</span><span>审核时间 ${esc(fmt(payload.reviewed_at))}</span></div>`;
+          document.getElementById('links').innerHTML = `<a class="item" href="${esc(payload.source_url)}" target="_blank" rel="noreferrer" style="text-decoration:none;">源仓库</a><a class="item" href="/audits/${encodeURIComponent(payload.skill_id)}" style="text-decoration:none;">返回技能审计</a>`;
           document.getElementById('package-url').textContent = payload.package_url;
         })
         .catch((error) => {
-          document.getElementById('summary').textContent = `Failed to load version audit detail: ${String(error)}`;
+          document.getElementById('summary').textContent = `加载版本审计详情失败：${String(error)}`;
         });
     </script>
   </body>

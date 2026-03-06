@@ -121,3 +121,4 @@ docker compose -f infra/docker-compose.yml down
 - `OUTBOUND_PROXY` 会同时用于 GitHub / GitLab 搜索与 `git clone` 导入流程。
 - 若配置了 `GIT_REMOTE_URL`，审批发布会自动 `git push` 到该仓库；推送失败会阻断发布。
 - 若配置了 `GITLAB_RAW_BASE_URL`，安装清单会返回 GitLab Raw 下载地址；否则回退为本地 API 下载地址。
+- GitHub 仓库内置 `Upload Security Guard` 工作流；每次 `push` / `pull_request` 都会运行 `gitleaks` 进行明文凭据扫描。

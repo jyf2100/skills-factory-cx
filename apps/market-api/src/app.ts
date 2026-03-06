@@ -20,6 +20,7 @@ import type { StateStore } from "./state.js";
 import { searchWhitelistedSources } from "./services/source-search.js";
 import { importSkillFromSource } from "./services/importer.js";
 import { publishSkill } from "./services/publisher.js";
+import { GitLabCatalogService } from "./services/gitlab-catalog.js";
 
 interface AppDeps {
   config: AppConfig;
@@ -30,7 +31,23 @@ export function createApp({ config, store }: AppDeps): express.Express {
   const app = express();
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const reviewHtmlPath = join(currentDir, "web", "review-console.html");
+  const catalogHtmlPath = join(currentDir, "web", "catalog.html");
+  const skillDetailHtmlPath = join(currentDir, "web", "skill-detail.html");
+  const catalog = new GitLabCatalogService({
+    rawBaseUrl: config.gitlabRawBaseUrl,
+    fetchBaseUrl: config.gitlabFetchBaseUrl
+  });
   app.use(express.json({ limit: "2mb" }));
+
+  app.get("/", (_req, res) => {
+    const page = readFileSync(catalogHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/skills/:skillId", (_req, res) => {
+    const page = readFileSync(skillDetailHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
 
   app.get("/healthz", (_req, res) => {
     res.json({ ok: true, now: new Date().toISOString() });
@@ -44,6 +61,41 @@ export function createApp({ config, store }: AppDeps): express.Express {
   app.get("/api/v1/public-key", (_req, res) => {
     const publicPem = readFileSync(config.signingPublicKeyPath, "utf8");
     res.json({ key_id: "market-ed25519-v1", pem: publicPem });
+  });
+
+  app.get("/api/v1/catalog/skills", async (req, res) => {
+    try {
+      const query = typeof req.query.query === "string" ? req.query.query : undefined;
+      const items = await catalog.listSkills(query);
+      return res.json({ items });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
+  app.get("/api/v1/catalog/skills/:skillId", async (req, res) => {
+    try {
+      const item = await catalog.getSkillDetail(req.params.skillId);
+      if (!item) {
+        return res.status(404).json({ error: "skill not found" });
+      }
+      return res.json(item);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
+  app.get("/api/v1/catalog/audits", async (req, res) => {
+    try {
+      const limit = typeof req.query.limit === "string" ? Number(req.query.limit) : 12;
+      const items = await catalog.listAudits(Number.isFinite(limit) && limit > 0 ? limit : 12);
+      return res.json({ items });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
   });
 
   app.get("/api/v1/ingests", (req, res) => {

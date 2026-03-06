@@ -1,5 +1,7 @@
 # Local Skills Market (MVP)
 
+- 安装与使用手册：`docs/install-guide.md`
+
 本项目实现了本地 Skills 市场 MVP：
 
 - `market-api`: 搜索/导入/审核/发布/安装清单/审计 API
@@ -9,6 +11,7 @@
 
 ## Features (v1)
 
+- 内部目录首页 `/` 与技能详情页 `/skills/:skillId`，整体体验对标 `skills.sh`，但数据源改为本地 GitLab
 - 白名单来源校验（默认 `github.com` / `gitlab.com` / `skills.sh`）
 - 导入后静态扫描 + rootless 容器沙箱检查
 - 异步导入队列 + `ingest-worker` 轮询处理
@@ -32,6 +35,8 @@ cp .env.example .env
 GIT_REMOTE_URL=http://127.0.0.1:8929/root/skills-repo.git
 GIT_PUSH_BRANCH=main
 GITLAB_RAW_BASE_URL=http://127.0.0.1:8929/root/skills-repo/-/raw/main
+# 可选：market-api 在容器内运行时可单独指定 GitLab raw 的内部访问地址
+# GITLAB_FETCH_BASE_URL=http://gitlab:8929/root/skills-repo/-/raw/main
 npm install
 npm run build
 npm run dev:api

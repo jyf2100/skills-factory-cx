@@ -24,6 +24,7 @@ export interface AppConfig {
   gitRemoteUrl?: string;
   gitPushBranch: string;
   gitlabRawBaseUrl?: string;
+  gitlabFetchBaseUrl?: string;
 }
 
 export function loadConfig(): AppConfig {
@@ -42,6 +43,7 @@ export function loadConfig(): AppConfig {
     signingPublicKeyPath: resolve(env("SIGNING_PUBLIC_KEY_PATH", `${dataDir}/keys/market_public.pem`)),
     gitRemoteUrl: envOptional("GIT_REMOTE_URL"),
     gitPushBranch: env("GIT_PUSH_BRANCH", "main"),
-    gitlabRawBaseUrl: envOptional("GITLAB_RAW_BASE_URL")
+    gitlabRawBaseUrl: envOptional("GITLAB_RAW_BASE_URL"),
+    gitlabFetchBaseUrl: envOptional("GITLAB_FETCH_BASE_URL")
   };
 }

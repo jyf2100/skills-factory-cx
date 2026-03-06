@@ -7,13 +7,16 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "npm --workspace @skills/shared run build && tsc -p tsconfig.json && mkdir -p dist && cp -R src/web dist/",
+    "build": "npm --workspace @skills/shared run build && tsc -p tsconfig.json && mkdir -p dist && cp -R src/web dist/ && mkdir -p dist/db && cp -R src/db/migrations dist/db/",
     "test": "npm --workspace @skills/shared run build && vitest run",
-    "lint": "echo 'no-op'"
+    "lint": "echo 'no-op'",
+    "rebuild-catalog-db": "npm run build && node dist/scripts/rebuild-catalog-db.js"
   },
   "dependencies": {
     "@skills/shared": "file:../../packages/shared",
+    "@types/pg": "^8.18.0",
     "express": "^4.21.2",
+    "pg": "^8.20.0",
     "tar": "^7.4.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"

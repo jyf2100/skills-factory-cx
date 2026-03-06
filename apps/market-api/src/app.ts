@@ -22,13 +22,17 @@ import { searchWhitelistedSources } from "./services/source-search.js";
 import { importSkillFromSource } from "./services/importer.js";
 import { publishSkill } from "./services/publisher.js";
 import { GitLabCatalogService } from "./services/gitlab-catalog.js";
+import type { CatalogReader } from "./services/catalog-model.js";
+import type { CatalogProjector } from "./services/catalog-projector.js";
 
 interface AppDeps {
   config: AppConfig;
   store: StateStore;
+  catalog?: CatalogReader;
+  catalogProjector?: CatalogProjector;
 }
 
-export function createApp({ config, store }: AppDeps): express.Express {
+export function createApp({ config, store, catalog: catalogOverride, catalogProjector }: AppDeps): express.Express {
   const app = express();
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const reviewHtmlPath = join(currentDir, "web", "review-console.html");
@@ -40,10 +44,12 @@ export function createApp({ config, store }: AppDeps): express.Express {
   const categoryDetailHtmlPath = join(currentDir, "web", "category-detail.html");
   const auditDetailHtmlPath = join(currentDir, "web", "audit-detail.html");
   const auditVersionDetailHtmlPath = join(currentDir, "web", "audit-version-detail.html");
-  const catalog = new GitLabCatalogService({
-    rawBaseUrl: config.gitlabRawBaseUrl,
-    fetchBaseUrl: config.gitlabFetchBaseUrl
-  });
+  const catalog =
+    catalogOverride ??
+    new GitLabCatalogService({
+      rawBaseUrl: config.gitlabRawBaseUrl,
+      fetchBaseUrl: config.gitlabFetchBaseUrl
+    });
   app.use(express.json({ limit: "2mb" }));
   app.use("/assets", express.static(join(currentDir, "web", "assets")));
 
@@ -381,6 +387,9 @@ export function createApp({ config, store }: AppDeps): express.Express {
         actor: approval.reviewer,
         details: { package_path: published.package_path }
       });
+      if (catalogProjector) {
+        await catalogProjector.projectPublishedSkill(published);
+      }
 
       return res.json({ published });
     } catch (error) {
@@ -452,62 +461,47 @@ export function createApp({ config, store }: AppDeps): express.Express {
 
   app.get("/api/v1/skills/:skillId/versions/:version", (req, res) => {
     const state = store.load();
-    const item = state.published.find(
-      (candidate) =>
-        candidate.record.skill_id === req.params.skillId && candidate.record.version === req.params.version
+    const version = state.published.find(
+      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
     );
-    if (!item) {
-      return res.status(404).json({ error: "skill version not found" });
+    if (!version) {
+      return res.status(404).json({ error: "version not found" });
     }
-    return res.json({ item });
+    return res.json(version);
   });
 
   app.get("/api/v1/install/:skillId/:version", (req, res) => {
     const state = store.load();
-    const item = state.published.find(
-      (candidate) =>
-        candidate.record.skill_id === req.params.skillId && candidate.record.version === req.params.version
+    const version = state.published.find(
+      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
     );
-    if (!item) {
+    if (!version) {
       return res.status(404).json({ error: "install manifest not found" });
     }
-    return res.json(item.install);
+
+    const publicPem = readFileSync(config.signingPublicKeyPath, "utf8");
+    const verified = verifyHashSignature(version.install.package_sha256, version.install.signature, publicPem);
+    res.json({ ...version.install, signature_valid: verified });
   });
 
   app.get("/api/v1/packages/:skillId/:version", (req, res) => {
     const state = store.load();
-    const item = state.published.find(
-      (candidate) =>
-        candidate.record.skill_id === req.params.skillId && candidate.record.version === req.params.version
+    const version = state.published.find(
+      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
     );
-    if (!item) {
+    if (!version) {
       return res.status(404).json({ error: "package not found" });
     }
-    return res.download(item.package_path);
-  });
-
-  app.get("/api/v1/audit/:skillId/:version", (req, res) => {
-    const state = store.load();
-    const events = state.audit.filter(
-      (event) => event.skill_id === req.params.skillId && event.version === req.params.version
-    );
-    return res.json({ events });
+    return res.sendFile(version.package_path);
   });
 
   app.post("/api/v1/install-log/:skillId/:version", (req, res) => {
     const state = store.load();
-    const item = state.published.find(
-      (candidate) =>
-        candidate.record.skill_id === req.params.skillId && candidate.record.version === req.params.version
+    const published = state.published.find(
+      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
     );
-    if (!item) {
-      return res.status(404).json({ error: "not found" });
-    }
-
-    const publicPem = readFileSync(config.signingPublicKeyPath, "utf8");
-    const signatureOk = verifyHashSignature(item.install.package_sha256, item.install.signature, publicPem);
-    if (!signatureOk) {
-      return res.status(409).json({ error: "signature verification failed" });
+    if (!published) {
+      return res.status(404).json({ error: "published skill not found" });
     }
 
     store.appendAudit({
@@ -516,11 +510,10 @@ export function createApp({ config, store }: AppDeps): express.Express {
       skill_id: req.params.skillId,
       version: req.params.version,
       at: new Date().toISOString(),
-      actor: typeof req.body?.actor === "string" ? req.body.actor : "unknown",
-      details: { host: req.body?.host ?? "unknown" }
+      actor: req.body?.actor ?? "unknown",
+      details: req.body && typeof req.body === "object" ? (req.body as Record<string, unknown>) : {}
     });
-
-    return res.json({ ok: true });
+    return res.status(202).json({ ok: true });
   });
 
   return app;

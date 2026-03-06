@@ -63,6 +63,11 @@ services:
       NO_PROXY: 127.0.0.1,localhost,gitlab,market-api
       no_proxy: 127.0.0.1,localhost,gitlab,market-api
       MARKET_API_HOST: 0.0.0.0
+      CATALOG_BACKEND: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: skills
+      POSTGRES_DB: skills_market
     command:
       - sh
       - -lc

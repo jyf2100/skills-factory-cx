@@ -12,6 +12,14 @@ function envOptional(name: string): string | undefined {
   return value.trim();
 }
 
+export interface DatabaseConfig {
+  host: string;
+  port: number;
+  user: string;
+  password?: string;
+  database: string;
+}
+
 export interface AppConfig {
   port: number;
   host: string;
@@ -25,6 +33,8 @@ export interface AppConfig {
   gitPushBranch: string;
   gitlabRawBaseUrl?: string;
   gitlabFetchBaseUrl?: string;
+  catalogBackend: "gitlab" | "postgres";
+  database: DatabaseConfig;
 }
 
 export function loadConfig(): AppConfig {
@@ -44,6 +54,14 @@ export function loadConfig(): AppConfig {
     gitRemoteUrl: envOptional("GIT_REMOTE_URL"),
     gitPushBranch: env("GIT_PUSH_BRANCH", "main"),
     gitlabRawBaseUrl: envOptional("GITLAB_RAW_BASE_URL"),
-    gitlabFetchBaseUrl: envOptional("GITLAB_FETCH_BASE_URL")
+    gitlabFetchBaseUrl: envOptional("GITLAB_FETCH_BASE_URL"),
+    catalogBackend: env("CATALOG_BACKEND", "gitlab") === "postgres" ? "postgres" : "gitlab",
+    database: {
+      host: env("POSTGRES_HOST", "127.0.0.1"),
+      port: Number(env("POSTGRES_PORT", "5432")),
+      user: env("POSTGRES_USER", "skills"),
+      password: envOptional("POSTGRES_PASSWORD"),
+      database: env("POSTGRES_DB", "skills_market")
+    }
   };
 }

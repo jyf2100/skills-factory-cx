@@ -120,6 +120,7 @@ docker compose -f infra/docker-compose.yml down
 
 - `market-api` 与 `ingest-worker` 现在可通过 compose 启动。
 - compose 使用宿主机已构建的 `dist` 产物，因此在启动前需要先运行一次 `npm run build`。
+- compose 运行时会强制将目录读模型切到 PostgreSQL（`CATALOG_BACKEND=postgres`，`POSTGRES_HOST=postgres`）。
 - compose 运行时只会把 `GIT_REMOTE_URL` 改写到容器内的 `gitlab` 服务（或回退到 `host.docker.internal`）；`GITLAB_RAW_BASE_URL` 保持宿主机可访问地址，避免安装清单返回内网域名。
 - 若要启动 compose 管理的 GitLab，请先停止现有独立 `skills-gitlab`，否则 `8929` / `2224` 会端口冲突。
 - 新起的 compose GitLab 默认是全新实例；首次使用前需要在其中创建 `root/skills-repo`。

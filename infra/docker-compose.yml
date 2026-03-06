@@ -74,13 +74,13 @@ services:
         if [ -n "$$GIT_REMOTE_URL" ]; then
           export GIT_REMOTE_URL="$(printf '%s' "$$GIT_REMOTE_URL" | sed "s|127\\.0\\.0\\.1|$${GITLAB_HOST}|g; s|localhost|$${GITLAB_HOST}|g")"
         fi
-        export MARKET_API_BASE_URL="$${MARKET_API_BASE_URL:-http://market-api:4310}"
+        export MARKET_API_BASE_URL="$${MARKET_API_BASE_URL:-http://market-api:4311}"
         if [ -z "$$GITLAB_FETCH_BASE_URL" ] && [ -n "$$GITLAB_RAW_BASE_URL" ]; then
           export GITLAB_FETCH_BASE_URL="$(printf '%s' "$$GITLAB_RAW_BASE_URL" | sed "s|127\.0\.0\.1|$${GITLAB_HOST}|g; s|localhost|$${GITLAB_HOST}|g")"
         fi
         node apps/market-api/dist/index.js
     ports:
-      - "4310:4310"
+      - "4311:4311"
     volumes:
       - ..:/app
     extra_hosts:
@@ -108,7 +108,7 @@ services:
         if getent hosts gitlab >/dev/null 2>&1; then
           GITLAB_HOST=gitlab
         fi
-        export MARKET_API_BASE_URL="http://market-api:4310"
+        export MARKET_API_BASE_URL="http://market-api:4311"
         if [ -n "$$GIT_REMOTE_URL" ]; then
           export GIT_REMOTE_URL="$(printf '%s' "$$GIT_REMOTE_URL" | sed "s|127\\.0\\.0\\.1|$${GITLAB_HOST}|g; s|localhost|$${GITLAB_HOST}|g")"
         fi

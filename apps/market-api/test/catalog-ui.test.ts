@@ -40,4 +40,18 @@ describe("public catalog ui", () => {
     expect(categoriesHtml).toContain("Featured Categories");
     expect(categoriesHtml).toContain("Category Skills");
   });
+
+  it("contains independent category and audit detail pages", () => {
+    const categoryDetailHtml = readFileSync(join(process.cwd(), "src", "web", "category-detail.html"), "utf8");
+    const auditDetailHtml = readFileSync(join(process.cwd(), "src", "web", "audit-detail.html"), "utf8");
+
+    expect(categoryDetailHtml).toContain("Category Overview");
+    expect(categoryDetailHtml).toContain("Category Skills");
+    expect(categoryDetailHtml).toContain("Related Tags");
+
+    expect(auditDetailHtml).toContain("Audit Detail");
+    expect(auditDetailHtml).toContain("Latest Decision");
+    expect(auditDetailHtml).toContain("Version Audit Timeline");
+    expect(auditDetailHtml).toContain("Evidence Summary");
+  });
 });

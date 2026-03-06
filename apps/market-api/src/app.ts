@@ -36,6 +36,8 @@ export function createApp({ config, store }: AppDeps): express.Express {
   const leaderboardHtmlPath = join(currentDir, "web", "leaderboard.html");
   const auditsHtmlPath = join(currentDir, "web", "audits.html");
   const categoriesHtmlPath = join(currentDir, "web", "categories.html");
+  const categoryDetailHtmlPath = join(currentDir, "web", "category-detail.html");
+  const auditDetailHtmlPath = join(currentDir, "web", "audit-detail.html");
   const catalog = new GitLabCatalogService({
     rawBaseUrl: config.gitlabRawBaseUrl,
     fetchBaseUrl: config.gitlabFetchBaseUrl
@@ -62,8 +64,18 @@ export function createApp({ config, store }: AppDeps): express.Express {
     res.type("html").send(page);
   });
 
+  app.get("/audits/:skillId", (_req, res) => {
+    const page = readFileSync(auditDetailHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
   app.get("/categories", (_req, res) => {
     const page = readFileSync(categoriesHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/categories/:slug", (_req, res) => {
+    const page = readFileSync(categoryDetailHtmlPath, "utf8");
     res.type("html").send(page);
   });
 
@@ -121,6 +133,19 @@ export function createApp({ config, store }: AppDeps): express.Express {
       const limit = typeof req.query.limit === "string" ? Number(req.query.limit) : 12;
       const items = await catalog.listAudits(Number.isFinite(limit) && limit > 0 ? limit : 12);
       return res.json({ items });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
+  app.get("/api/v1/catalog/audits/:skillId", async (req, res) => {
+    try {
+      const item = await catalog.getAuditDetail(req.params.skillId);
+      if (!item) {
+        return res.status(404).json({ error: "audit detail not found" });
+      }
+      return res.json(item);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return res.status(500).json({ error: message });

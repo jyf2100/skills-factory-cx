@@ -33,7 +33,7 @@
       fetch('/api/v1/catalog/audits').then((res) => res.json()).then((payload) => {
         table.insertAdjacentHTML('beforeend', (payload.items || []).map((item) => `
           <div class="row">
-            <div><strong><a href="/skills/${encodeURIComponent(item.skill_id)}" style="color:inherit;text-decoration:none;">${esc(item.title)}</a></strong><div class="muted">${esc(item.version)} · ${esc(item.reviewer)} · ${esc(item.category)}</div></div>
+            <div><strong><a href="/audits/${encodeURIComponent(item.skill_id)}" style="color:inherit;text-decoration:none;">${esc(item.title)}</a></strong><div class="muted">${esc(item.version)} · ${esc(item.reviewer)} · ${esc(item.category)}</div></div>
             <div><span class="pill ${esc(item.review_status)}">${esc(item.review_status)}</span></div>
             <div><span class="pill ${esc(item.static_scan_status)}">${esc(item.static_scan_status)}</span></div>
             <div><span class="pill ${esc(item.sandbox_status)}">${esc(item.sandbox_status)}</span></div>

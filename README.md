@@ -81,7 +81,9 @@ Additional:
 - `GET /review` (minimal reviewer console)
 - `GET /leaderboard`
 - `GET /audits`
+- `GET /audits/:skillId`
 - `GET /categories`
+- `GET /categories/:slug`
 
 ## Local Skills Repository Layout
 

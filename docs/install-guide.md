@@ -203,7 +203,9 @@ git ls-remote "http://root:<你的 GitLab 密码>@127.0.0.1:8929/root/skills-rep
 - `/skills/:skillId`：技能详情页
 - `/leaderboard`：内部排行榜
 - `/audits`：内部审计专页
+- `/audits/:skillId`：单技能审计详情页
 - `/categories`：分类浏览页
+- `/categories/:slug`：分类独立详情页
 
 ## 9. 最小使用流程
 

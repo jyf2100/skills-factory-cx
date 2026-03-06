@@ -26,25 +26,16 @@
         <div id="categories" class="grid"></div>
       </section>
       <section class="detail">
-        <h2 id="detail-title">Category Skills</h2>
-        <div id="detail-list" class="list"></div>
+        <h2>Category Skills</h2>
+        <div style="color:#64748b;">Open a category to view its standalone detail page.</div>
       </section>
     </div>
     <script>
       const categoriesEl = document.getElementById('categories');
-      const detailTitle = document.getElementById('detail-title');
-      const detailList = document.getElementById('detail-list');
       const esc = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-      async function loadCategory(slug, label) {
-        const payload = await fetch(`/api/v1/catalog/categories/${encodeURIComponent(slug)}`).then((res) => res.json());
-        detailTitle.textContent = `Category Skills · ${label}`;
-        detailList.innerHTML = (payload.items || []).map((item) => `<div class="item"><strong><a href="/skills/${encodeURIComponent(item.skill_id)}" style="color:inherit;text-decoration:none;">${esc(item.title)}</a></strong><div>${esc(item.summary)}</div><div style="color:#64748b;font-size:13px;">${esc(item.latest_version)} · ${esc(item.reviewer)}</div></div>`).join('');
-      }
       fetch('/api/v1/catalog/categories').then((res) => res.json()).then((payload) => {
         const items = payload.items || [];
-        categoriesEl.innerHTML = items.map((item) => `<div class="card"><h3>${esc(item.label)}</h3><div style="color:#64748b;margin-bottom:12px;">${esc(String(item.skills_count))} skills</div><button data-slug="${esc(item.slug)}" data-label="${esc(item.label)}">Open Category</button></div>`).join('');
-        categoriesEl.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => loadCategory(button.dataset.slug, button.dataset.label)));
-        if (items[0]) loadCategory(items[0].slug, items[0].label);
+        categoriesEl.innerHTML = items.map((item) => `<div class="card"><h3>${esc(item.label)}</h3><div style="color:#64748b;margin-bottom:12px;">${esc(String(item.skills_count))} skills</div><button data-slug="${esc(item.slug)}" data-label="${esc(item.label)}">Open Category</a></div>`).join('');
       });
     </script>
   </body>

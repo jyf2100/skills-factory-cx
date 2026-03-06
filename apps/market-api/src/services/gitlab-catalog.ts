@@ -86,6 +86,29 @@ export interface CatalogCategoryDetail {
   items: CatalogSkillSummary[];
 }
 
+export interface CatalogAuditDetailVersion {
+  version: string;
+  reviewer: string;
+  reviewed_at: string;
+  note: string;
+  risk_level: RiskLevel;
+  review_status: "approved" | "rejected";
+  static_scan_status: "clean" | "issues_detected";
+  sandbox_status: "passed" | "blocked";
+  scan_issue_count: number;
+}
+
+export interface CatalogAuditDetail {
+  skill_id: string;
+  title: string;
+  category: string;
+  latest_version: string;
+  latest_review_status: "approved" | "rejected";
+  latest_static_scan_status: "clean" | "issues_detected";
+  latest_sandbox_status: "passed" | "blocked";
+  versions: CatalogAuditDetailVersion[];
+}
+
 interface ParsedSkillMarkdown {
   title: string;
   summary: string;
@@ -214,6 +237,36 @@ export class GitLabCatalogService {
         items: items.sort((left, right) => right.published_at.localeCompare(left.published_at))
       }))
       .sort((left, right) => right.skills_count - left.skills_count || right.latest_published_at.localeCompare(left.latest_published_at));
+  }
+
+  async getAuditDetail(skillId: string): Promise<CatalogAuditDetail | undefined> {
+    const aggregate = (await this.loadAggregates()).find((item) => item.entry.skill_id === skillId);
+    if (!aggregate) {
+      return undefined;
+    }
+
+    const versions = aggregate.versions.map((bundle) => ({
+      version: bundle.record.version,
+      reviewer: bundle.attestation.approval.reviewer,
+      reviewed_at: bundle.attestation.approval.reviewed_at,
+      note: bundle.attestation.approval.note,
+      risk_level: bundle.record.risk_level,
+      review_status: (bundle.attestation.approval.decision === "approve" ? "approved" : "rejected") as "approved" | "rejected",
+      static_scan_status: (bundle.attestation.scan_issues.length > 0 ? "issues_detected" : "clean") as "clean" | "issues_detected",
+      sandbox_status: (bundle.attestation.sandbox_result.ok ? "passed" : "blocked") as "passed" | "blocked",
+      scan_issue_count: bundle.attestation.scan_issues.length
+    }));
+
+    return {
+      skill_id: aggregate.summary.skill_id,
+      title: aggregate.summary.title,
+      category: aggregate.summary.category,
+      latest_version: aggregate.summary.latest_version,
+      latest_review_status: versions[0]?.review_status ?? "approved",
+      latest_static_scan_status: versions[0]?.static_scan_status ?? "clean",
+      latest_sandbox_status: versions[0]?.sandbox_status ?? "passed",
+      versions
+    };
   }
 
   async getCategoryDetail(slug: string): Promise<CatalogCategoryDetail | undefined> {

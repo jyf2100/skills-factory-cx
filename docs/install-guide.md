@@ -197,6 +197,14 @@ docker exec infra-gitlab-1 gitlab-rails runner "project = Projects::CreateServic
 git ls-remote "http://root:<你的 GitLab 密码>@127.0.0.1:8929/root/skills-repo.git"
 ```
 
+可访问的前台页面：
+
+- `/`：技能目录首页
+- `/skills/:skillId`：技能详情页
+- `/leaderboard`：内部排行榜
+- `/audits`：内部审计专页
+- `/categories`：分类浏览页
+
 ## 9. 最小使用流程
 
 ### 9.1 打开审核台

@@ -9,6 +9,8 @@ describe("public catalog ui", () => {
     expect(html).toContain("Search skills");
     expect(html).toContain("Recently Published");
     expect(html).toContain("Latest Audits");
+    expect(html).toContain("Leaderboard");
+    expect(html).toContain("Categories");
   });
 
   it("contains the skill detail sections", () => {
@@ -17,5 +19,25 @@ describe("public catalog ui", () => {
     expect(html).toContain("Install Command");
     expect(html).toContain("Version History");
     expect(html).toContain("Audit Evidence");
+  });
+
+  it("contains the leaderboard, audits, and categories pages", () => {
+    const leaderboardHtml = readFileSync(join(process.cwd(), "src", "web", "leaderboard.html"), "utf8");
+    const auditsHtml = readFileSync(join(process.cwd(), "src", "web", "audits.html"), "utf8");
+    const categoriesHtml = readFileSync(join(process.cwd(), "src", "web", "categories.html"), "utf8");
+
+    expect(leaderboardHtml).toContain("Skills Leaderboard");
+    expect(leaderboardHtml).toContain("All Time");
+    expect(leaderboardHtml).toContain("Trending");
+    expect(leaderboardHtml).toContain("Hot");
+
+    expect(auditsHtml).toContain("Audit Center");
+    expect(auditsHtml).toContain("Review Status");
+    expect(auditsHtml).toContain("Static Scan");
+    expect(auditsHtml).toContain("Sandbox");
+
+    expect(categoriesHtml).toContain("Browse by Category");
+    expect(categoriesHtml).toContain("Featured Categories");
+    expect(categoriesHtml).toContain("Category Skills");
   });
 });

@@ -33,6 +33,9 @@ export function createApp({ config, store }: AppDeps): express.Express {
   const reviewHtmlPath = join(currentDir, "web", "review-console.html");
   const catalogHtmlPath = join(currentDir, "web", "catalog.html");
   const skillDetailHtmlPath = join(currentDir, "web", "skill-detail.html");
+  const leaderboardHtmlPath = join(currentDir, "web", "leaderboard.html");
+  const auditsHtmlPath = join(currentDir, "web", "audits.html");
+  const categoriesHtmlPath = join(currentDir, "web", "categories.html");
   const catalog = new GitLabCatalogService({
     rawBaseUrl: config.gitlabRawBaseUrl,
     fetchBaseUrl: config.gitlabFetchBaseUrl
@@ -46,6 +49,21 @@ export function createApp({ config, store }: AppDeps): express.Express {
 
   app.get("/skills/:skillId", (_req, res) => {
     const page = readFileSync(skillDetailHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/leaderboard", (_req, res) => {
+    const page = readFileSync(leaderboardHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/audits", (_req, res) => {
+    const page = readFileSync(auditsHtmlPath, "utf8");
+    res.type("html").send(page);
+  });
+
+  app.get("/categories", (_req, res) => {
+    const page = readFileSync(categoriesHtmlPath, "utf8");
     res.type("html").send(page);
   });
 
@@ -87,11 +105,45 @@ export function createApp({ config, store }: AppDeps): express.Express {
     }
   });
 
+  app.get("/api/v1/catalog/leaderboard", async (req, res) => {
+    try {
+      const limit = typeof req.query.limit === "string" ? Number(req.query.limit) : 10;
+      const items = await catalog.getLeaderboard(Number.isFinite(limit) && limit > 0 ? limit : 10);
+      return res.json(items);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
   app.get("/api/v1/catalog/audits", async (req, res) => {
     try {
       const limit = typeof req.query.limit === "string" ? Number(req.query.limit) : 12;
       const items = await catalog.listAudits(Number.isFinite(limit) && limit > 0 ? limit : 12);
       return res.json({ items });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
+  app.get("/api/v1/catalog/categories", async (_req, res) => {
+    try {
+      const items = await catalog.listCategories();
+      return res.json({ items });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({ error: message });
+    }
+  });
+
+  app.get("/api/v1/catalog/categories/:slug", async (req, res) => {
+    try {
+      const item = await catalog.getCategoryDetail(req.params.slug);
+      if (!item) {
+        return res.status(404).json({ error: "category not found" });
+      }
+      return res.json(item);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return res.status(500).json({ error: message });

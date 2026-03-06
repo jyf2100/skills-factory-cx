@@ -11,7 +11,7 @@
 
 ## Features (v1)
 
-- 内部目录首页 `/` 与技能详情页 `/skills/:skillId`，整体体验对标 `skills.sh`，但数据源改为本地 GitLab
+- 内部目录首页 `/`、技能详情页 `/skills/:skillId`、`/leaderboard`、`/audits`、`/categories`，整体体验对标 `skills.sh`，但数据源改为本地 GitLab
 - 白名单来源校验（默认 `github.com` / `gitlab.com` / `skills.sh`）
 - 导入后静态扫描 + rootless 容器沙箱检查
 - 异步导入队列 + `ingest-worker` 轮询处理
@@ -79,6 +79,9 @@ Additional:
 - `GET /api/v1/packages/:skill_id/:version`
 - `POST /api/v1/install-log/:skill_id/:version`
 - `GET /review` (minimal reviewer console)
+- `GET /leaderboard`
+- `GET /audits`
+- `GET /categories`
 
 ## Local Skills Repository Layout
 

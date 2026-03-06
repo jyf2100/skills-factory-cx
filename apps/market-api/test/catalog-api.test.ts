@@ -34,6 +34,18 @@ describe("gitlab-backed catalog service", () => {
           published_at: "2026-03-06T02:00:00.000Z"
         });
       }
+      if (url.endsWith("/metadata/demo-skill/0.1.0.json")) {
+        return jsonResponse({
+          skill_id: "demo-skill",
+          version: "0.1.0",
+          source_url: "https://gitlab.local/root/demo-skill",
+          source_commit: "abc120",
+          hash_sha256: "oldbeef",
+          license: "MIT",
+          risk_level: "low",
+          published_at: "2026-03-01T02:00:00.000Z"
+        });
+      }
       if (url.endsWith("/install-manifests/demo-skill/0.2.0.json")) {
         return jsonResponse({
           skill_id: "demo-skill",
@@ -44,6 +56,18 @@ describe("gitlab-backed catalog service", () => {
           public_key_id: "market-ed25519-v1",
           source_url: "https://gitlab.local/root/demo-skill",
           published_at: "2026-03-06T02:00:00.000Z"
+        });
+      }
+      if (url.endsWith("/install-manifests/demo-skill/0.1.0.json")) {
+        return jsonResponse({
+          skill_id: "demo-skill",
+          version: "0.1.0",
+          package_url: `${rawBaseUrl}/packages/demo-skill/0.1.0.tgz`,
+          package_sha256: "oldbeef",
+          signature: "sig",
+          public_key_id: "market-ed25519-v1",
+          source_url: "https://gitlab.local/root/demo-skill",
+          published_at: "2026-03-01T02:00:00.000Z"
         });
       }
       if (url.endsWith("/attestations/demo-skill/0.2.0.json")) {
@@ -62,7 +86,26 @@ describe("gitlab-backed catalog service", () => {
           key_id: "market-ed25519-v1"
         });
       }
+      if (url.endsWith("/attestations/demo-skill/0.1.0.json")) {
+        return jsonResponse({
+          ingest_id: "ing-0",
+          scan_issues: [],
+          sandbox_result: { ran: true, runtime: "docker", ok: true, output: "ok" },
+          approval: {
+            ingest_id: "ing-0",
+            reviewer: "alice",
+            decision: "approve",
+            note: "earlier release",
+            reviewed_at: "2026-03-01T02:01:00.000Z"
+          },
+          signature: "sig",
+          key_id: "market-ed25519-v1"
+        });
+      }
       if (url.endsWith("/skills/demo-skill/0.2.0/SKILL.md")) {
+        return new Response("# Demo Skill\n\nA local GitLab-backed demo skill.\n", { status: 200 });
+      }
+      if (url.endsWith("/skills/demo-skill/0.1.0/SKILL.md")) {
         return new Response("# Demo Skill\n\nA local GitLab-backed demo skill.\n", { status: 200 });
       }
       throw new Error(`unexpected url ${url}`);

@@ -63,11 +63,13 @@ describe("postgres catalog service", () => {
       const repo = new PostgresCatalogService(pool, fixture.config);
       await projector.rebuildAll();
 
+      const categories = await repo.listCategories();
       const category = await repo.getCategoryDetail("development", { sort: "title", q: "react", tag: "forms" });
       const auditDetail = await repo.getAuditDetail("react-state");
       const auditVersion = await repo.getAuditVersionDetail("react-forms", "1.0.0");
       const leaderboard = await repo.getLeaderboard(5);
 
+      expect(categories).toEqual([expect.objectContaining({ slug: "development", skills_count: 2 })]);
       expect(category).toEqual(expect.objectContaining({ slug: "development", label: "Development" }));
       expect(category?.items).toEqual([expect.objectContaining({ skill_id: "react-forms", title: "React Forms Assistant" })]);
       expect(auditDetail).toEqual(expect.objectContaining({ skill_id: "react-state", latest_version: "0.2.0" }));

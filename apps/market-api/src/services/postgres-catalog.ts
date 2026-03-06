@@ -29,11 +29,11 @@ interface SkillRow {
   latest_version: string;
   versions_count: number;
   risk_level: RiskLevel;
-  published_at: string;
+  published_at: string | Date;
   source_url: string;
   package_url: string;
   reviewer: string;
-  reviewed_at: string | null;
+  reviewed_at: string | Date | null;
   review_note: string;
   scan_issue_count: number;
   review_status: "approved" | "rejected";
@@ -54,11 +54,11 @@ interface VersionRow {
   category: string;
   category_slug: string;
   risk_level: RiskLevel;
-  published_at: string;
+  published_at: string | Date;
   source_url: string;
   package_url: string;
   reviewer: string;
-  reviewed_at: string;
+  reviewed_at: string | Date;
   review_note: string;
   scan_issue_count: number;
   review_status: "approved" | "rejected";
@@ -177,7 +177,7 @@ export class PostgresCatalogService implements CatalogReader {
       versions: versionsResult.rows.map((row) => ({
         version: row.version,
         reviewer: row.reviewer,
-        reviewed_at: row.reviewed_at,
+        reviewed_at: toIsoString(row.reviewed_at),
         note: row.review_note,
         risk_level: row.risk_level,
         review_status: row.review_status,
@@ -209,14 +209,14 @@ export class PostgresCatalogService implements CatalogReader {
       category: row.category,
       version: row.version,
       reviewer: row.reviewer,
-      reviewed_at: row.reviewed_at,
+      reviewed_at: toIsoString(row.reviewed_at),
       note: row.review_note,
       risk_level: row.risk_level,
       review_status: row.review_status,
       static_scan_status: row.static_scan_status,
       sandbox_status: row.sandbox_status,
       scan_issue_count: row.scan_issue_count,
-      published_at: row.published_at,
+      published_at: toIsoString(row.published_at),
       source_url: row.source_url,
       package_url: row.package_url
     };
@@ -321,7 +321,7 @@ export class PostgresCatalogService implements CatalogReader {
       latest_version: row.latest_version,
       versions_count: Number(row.versions_count),
       risk_level: row.risk_level,
-      published_at: row.published_at,
+      published_at: toIsoString(row.published_at),
       source_url: row.source_url,
       package_url: row.package_url,
       reviewer: row.reviewer,
@@ -335,7 +335,7 @@ export class PostgresCatalogService implements CatalogReader {
     return {
       version: row.version,
       risk_level: row.risk_level,
-      published_at: row.published_at,
+      published_at: toIsoString(row.published_at),
       package_url: row.package_url,
       source_url: row.source_url,
       reviewer: row.reviewer,
@@ -350,8 +350,8 @@ export class PostgresCatalogService implements CatalogReader {
       title: row.title,
       version: row.version,
       reviewer: row.reviewer,
-      reviewed_at: row.reviewed_at,
-      published_at: row.published_at,
+      reviewed_at: toIsoString(row.reviewed_at),
+      published_at: toIsoString(row.published_at),
       risk_level: row.risk_level,
       note: row.review_note,
       scan_issue_count: Number(row.scan_issue_count),
@@ -383,6 +383,13 @@ export class PostgresCatalogService implements CatalogReader {
       .slice(0, limit)
       .map((item, index) => ({ ...item, rank: index + 1 }));
   }
+}
+
+function toIsoString(value: string | Date | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+  return value instanceof Date ? value.toISOString() : value;
 }
 
 function sortCategoryItems(left: CatalogSkillSummary, right: CatalogSkillSummary, sort: "latest" | "title" | "risk"): number {

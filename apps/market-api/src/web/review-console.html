@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Skills Admin Console</title>
+    <style>
+      :root {
+        --bg-0: #0b0e17;
+        --bg-1: #121826;
+        --panel: #0f172a;
+        --panel-2: #111f3b;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #f59e0b;
+        --accent-2: #22d3ee;
+        --ok: #22c55e;
+        --warn: #f97316;
+        --bad: #ef4444;
+        --line: rgba(148, 163, 184, 0.2);
+        --shadow: 0 18px 40px rgba(2, 6, 23, 0.5);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "SF Pro Display", "Segoe UI", sans-serif;
+        background: radial-gradient(1200px 800px at 10% -10%, rgba(34, 211, 238, 0.18), transparent 60%),
+          radial-gradient(1000px 700px at 90% -20%, rgba(245, 158, 11, 0.12), transparent 55%),
+          linear-gradient(160deg, var(--bg-0), var(--bg-1));
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      header {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .title-badge {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--accent);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        max-width: 720px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+
+      .card {
+        background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8));
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        animation: fadeUp 0.5s ease both;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+
+      .card p {
+        margin: 4px 0;
+        color: var(--muted);
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      input, select {
+        background: rgba(2, 6, 23, 0.6);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 8px 10px;
+        border-radius: 10px;
+        min-width: 180px;
+      }
+
+      button {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: 600;
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text);
+        transition: transform 0.15s ease, border 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(148, 163, 184, 0.5);
+      }
+
+      .primary {
+        background: linear-gradient(140deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.6));
+        color: #1f1300;
+      }
+
+      .secondary {
+        background: linear-gradient(140deg, rgba(34, 211, 238, 0.9), rgba(34, 211, 238, 0.6));
+        color: #021924;
+      }
+
+      .approve {
+        background: linear-gradient(140deg, rgba(34, 197, 94, 0.9), rgba(34, 197, 94, 0.6));
+        color: #04140a;
+      }
+
+      .reject {
+        background: linear-gradient(140deg, rgba(239, 68, 68, 0.9), rgba(239, 68, 68, 0.6));
+        color: #1b0b0b;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid transparent;
+      }
+
+      .badge.low {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--ok);
+        border-color: rgba(34, 197, 94, 0.4);
+      }
+
+      .badge.medium {
+        background: rgba(249, 115, 22, 0.15);
+        color: var(--warn);
+        border-color: rgba(249, 115, 22, 0.4);
+      }
+
+      .badge.high {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--bad);
+        border-color: rgba(239, 68, 68, 0.4);
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(15, 23, 42, 0.7);
+      }
+
+      pre {
+        background: rgba(2, 6, 23, 0.7);
+        padding: 10px;
+        border-radius: 10px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        color: #cbd5f5;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .col-6 { grid-column: span 6; }
+      .col-7 { grid-column: span 7; }
+      .col-5 { grid-column: span 5; }
+      .col-12 { grid-column: span 12; }
+
+      @media (max-width: 980px) {
+        .col-6, .col-7, .col-5 { grid-column: span 12; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="title">
+          <span class="title-badge">Internal</span>
+          <h1>Skills Admin Console</h1>
+        </div>
+        <p class="subtitle">
+          Manage the local skills supply chain: search and import from whitelisted sources, review risk, publish, and
+          inspect audit and install artifacts.
+        </p>
+      </header>
+
+      <div class="grid">
+        <section class="card col-7">
+          <div class="section-title">
+            <h2>Search &amp; Import</h2>
+            <button class="secondary" onclick="refreshAll()">Refresh All</button>
+          </div>
+          <div class="row" style="margin-top: 12px;">
+            <label>
+              Query
+              <input id="searchQuery" placeholder="openai, lint, security" />
+            </label>
+            <button class="primary" onclick="searchCandidates()">Search</button>
+          </div>
+          <div id="candidateList" class="list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card col-5">
+          <h2>Review Queue</h2>
+          <div class="row">
+            <label>
+              Reviewer
+              <input id="reviewer" value="security-reviewer" />
+            </label>
+            <label>
+              Note
+              <input id="reviewNote" value="approved in console" />
+            </label>
+          </div>
+          <div id="queueList" class="list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card col-12">
+          <h2>Queued Imports</h2>
+          <p class="muted">Run `npm run dev:worker` to claim queued jobs and push them into the review queue.</p>
+          <div id="jobList" class="list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card col-7">
+          <h2>Published</h2>
+          <div class="row">
+            <label>
+              Filter
+              <input id="publishedQuery" placeholder="skill id contains" />
+            </label>
+            <label>
+              Risk
+              <select id="publishedRisk">
+                <option value="">all</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </label>
+            <button onclick="loadPublished()">Apply</button>
+          </div>
+          <div id="publishedList" class="list" style="margin-top: 12px;"></div>
+        </section>
+
+        <section class="card col-5">
+          <h2>Audit &amp; Install</h2>
+          <p class="muted">Select a published skill to inspect audit events and install manifest.</p>
+          <div class="stack">
+            <div>
+              <h3 id="auditTitle">Not selected</h3>
+              <pre id="auditPayload">-</pre>
+            </div>
+            <div>
+              <h3>Install Manifest</h3>
+              <pre id="installPayload">-</pre>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const byId = (id) => document.getElementById(id);
+
+      function riskBadge(level) {
+        const badge = document.createElement("span");
+        badge.className = `badge ${level}`;
+        badge.textContent = level || "unknown";
+        return badge;
+      }
+
+      function statusBadge(status) {
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = status || "unknown";
+        badge.style.borderColor = "rgba(148, 163, 184, 0.4)";
+        badge.style.background = "rgba(148, 163, 184, 0.12)";
+        badge.style.color = "var(--text)";
+        return badge;
+      }
+
+      async function fetchJson(url, options) {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `HTTP ${res.status}`);
+        }
+        return res.json();
+      }
+
+      function emptyState(target, text) {
+        target.innerHTML = "";
+        const item = document.createElement("div");
+        item.className = "item";
+        item.textContent = text;
+        target.appendChild(item);
+      }
+
+      async function searchCandidates() {
+        const query = byId("searchQuery").value.trim();
+        if (!query) {
+          emptyState(byId("candidateList"), "Enter a query to search whitelisted sources.");
+          return;
+        }
+        try {
+          const payload = await fetchJson("/api/v1/ingest/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query })
+          });
+          renderCandidates(payload.candidates || []);
+        } catch (error) {
+          emptyState(byId("candidateList"), String(error));
+        }
+      }
+
+      function renderCandidates(candidates) {
+        const list = byId("candidateList");
+        if (!candidates.length) {
+          emptyState(list, "No candidates found.");
+          return;
+        }
+        list.innerHTML = "";
+        candidates.forEach((candidate) => {
+          const item = document.createElement("div");
+          item.className = "item";
+
+          const header = document.createElement("h3");
+          header.textContent = candidate.source_url;
+          item.appendChild(header);
+
+          const meta = document.createElement("p");
+          meta.textContent = candidate.description || "(no description)";
+          item.appendChild(meta);
+
+          const actions = document.createElement("div");
+          actions.className = "row";
+
+          const importBtn = document.createElement("button");
+          importBtn.className = "primary";
+          importBtn.textContent = "Import";
+          importBtn.onclick = () => importCandidate(candidate.source_url);
+
+          actions.appendChild(importBtn);
+          item.appendChild(actions);
+          list.appendChild(item);
+        });
+      }
+
+      async function importCandidate(sourceUrl) {
+        try {
+          await fetchJson("/api/v1/ingest/jobs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source_url: sourceUrl, query: byId("searchQuery").value.trim() })
+          });
+          await loadJobs();
+        } catch (error) {
+          emptyState(byId("candidateList"), String(error));
+        }
+      }
+
+      async function loadJobs() {
+        try {
+          const payload = await fetchJson("/api/v1/ingest/jobs");
+          renderJobs(payload.items || []);
+        } catch (error) {
+          emptyState(byId("jobList"), String(error));
+        }
+      }
+
+      function renderJobs(items) {
+        const list = byId("jobList");
+        if (!items.length) {
+          emptyState(list, "No queued imports yet.");
+          return;
+        }
+        list.innerHTML = "";
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const title = document.createElement("h3");
+          title.textContent = item.source_url;
+          row.appendChild(title);
+
+          const meta = document.createElement("p");
+          meta.textContent = item.query ? `query: ${item.query}` : "queued without search query";
+          row.appendChild(meta);
+
+          row.appendChild(statusBadge(item.status));
+
+          const details = document.createElement("pre");
+          details.textContent = JSON.stringify(
+            {
+              worker_id: item.worker_id,
+              ingest_id: item.ingest_id,
+              error: item.error,
+              attempts: item.attempts
+            },
+            null,
+            2
+          );
+          row.appendChild(details);
+          list.appendChild(row);
+        });
+      }
+
+      async function loadQueue() {
+        try {
+          const payload = await fetchJson("/api/v1/ingests?status=pending_review");
+          renderQueue(payload.items || []);
+        } catch (error) {
+          emptyState(byId("queueList"), String(error));
+        }
+      }
+
+      function renderQueue(items) {
+        const list = byId("queueList");
+        if (!items.length) {
+          emptyState(list, "No pending reviews.");
+          return;
+        }
+        list.innerHTML = "";
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const title = document.createElement("h3");
+          title.textContent = `${item.skill_id}@${item.version}`;
+          row.appendChild(title);
+
+          const meta = document.createElement("p");
+          meta.textContent = item.source_url;
+          row.appendChild(meta);
+
+          row.appendChild(riskBadge(item.risk_level));
+
+          const details = document.createElement("pre");
+          details.textContent = JSON.stringify(
+            {
+              scan_issues: item.scan_issues,
+              sandbox: item.sandbox_result
+            },
+            null,
+            2
+          );
+          row.appendChild(details);
+
+          const actions = document.createElement("div");
+          actions.className = "row";
+          const approveBtn = document.createElement("button");
+          approveBtn.className = "approve";
+          approveBtn.textContent = "Approve";
+          approveBtn.onclick = () => approve(item.id);
+
+          const rejectBtn = document.createElement("button");
+          rejectBtn.className = "reject";
+          rejectBtn.textContent = "Reject";
+          rejectBtn.onclick = () => reject(item.id);
+
+          actions.appendChild(approveBtn);
+          actions.appendChild(rejectBtn);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+      }
+
+      async function approve(id) {
+        const reviewer = byId("reviewer").value || "security-reviewer";
+        const note = byId("reviewNote").value || "approved in console";
+        await fetchJson(`/api/v1/reviews/${id}/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reviewer, note })
+        });
+        await refreshAll();
+      }
+
+      async function reject(id) {
+        const reviewer = byId("reviewer").value || "security-reviewer";
+        const note = byId("reviewNote").value || "rejected in console";
+        await fetchJson(`/api/v1/reviews/${id}/reject`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reviewer, note })
+        });
+        await refreshAll();
+      }
+
+      async function loadPublished() {
+        try {
+          const params = new URLSearchParams();
+          const query = byId("publishedQuery").value.trim();
+          const risk = byId("publishedRisk").value;
+          if (query) params.set("query", query);
+          if (risk) params.set("risk", risk);
+          const payload = await fetchJson(`/api/v1/skills?${params.toString()}`);
+          renderPublished(payload.items || []);
+        } catch (error) {
+          emptyState(byId("publishedList"), String(error));
+        }
+      }
+
+      function renderPublished(items) {
+        const list = byId("publishedList");
+        if (!items.length) {
+          emptyState(list, "No published skills yet.");
+          return;
+        }
+        list.innerHTML = "";
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const title = document.createElement("h3");
+          title.textContent = `${item.record.skill_id}@${item.record.version}`;
+          row.appendChild(title);
+
+          const meta = document.createElement("p");
+          meta.textContent = `${item.record.source_url}`;
+          row.appendChild(meta);
+
+          row.appendChild(riskBadge(item.record.risk_level));
+
+          const when = document.createElement("p");
+          when.textContent = `Published: ${item.record.published_at}`;
+          row.appendChild(when);
+
+          const actions = document.createElement("div");
+          actions.className = "row";
+          const inspectBtn = document.createElement("button");
+          inspectBtn.className = "secondary";
+          inspectBtn.textContent = "Inspect";
+          inspectBtn.onclick = () => loadAudit(item.record.skill_id, item.record.version);
+          actions.appendChild(inspectBtn);
+          row.appendChild(actions);
+
+          list.appendChild(row);
+        });
+      }
+
+      async function loadAudit(skillId, version) {
+        try {
+          const [audit, install] = await Promise.all([
+            fetchJson(`/api/v1/audit/${skillId}/${version}`),
+            fetchJson(`/api/v1/install/${skillId}/${version}`)
+          ]);
+          byId("auditTitle").textContent = `${skillId}@${version}`;
+          byId("auditPayload").textContent = JSON.stringify(audit.events || [], null, 2);
+          byId("installPayload").textContent = JSON.stringify(install || {}, null, 2);
+        } catch (error) {
+          byId("auditPayload").textContent = String(error);
+          byId("installPayload").textContent = "-";
+        }
+      }
+
+      async function refreshAll() {
+        await Promise.all([loadJobs(), loadQueue(), loadPublished()]);
+      }
+
+      refreshAll();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: skills-postgres
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      POSTGRES_USER: skills
+      POSTGRES_DB: skills_market
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  gitlab:
+    image: gitlab/gitlab-ce:16.11.2-ce.0
+    restart: unless-stopped
+    hostname: gitlab
+    shm_size: 256m
+    env_file:
+      - ../.env
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: 127.0.0.1,localhost,gitlab
+      no_proxy: 127.0.0.1,localhost,gitlab
+      GITLAB_ALLOW_SHA1_RSA: "false"
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://127.0.0.1:8929'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2224
+    ports:
+      - "8929:8929"
+      - "2224:22"
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+
+  nexus:
+    image: sonatype/nexus3:3.75.1
+    container_name: skills-nexus
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - nexus_data:/nexus-data
+
+  market-api:
+    image: node:20-bookworm
+    container_name: skills-market-api
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - ../.env
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: 127.0.0.1,localhost,gitlab,market-api
+      no_proxy: 127.0.0.1,localhost,gitlab,market-api
+      MARKET_API_HOST: 0.0.0.0
+    command:
+      - sh
+      - -lc
+      - |
+        GITLAB_HOST=host.docker.internal
+        if getent hosts gitlab >/dev/null 2>&1; then
+          GITLAB_HOST=gitlab
+        fi
+        if [ -n "$$GIT_REMOTE_URL" ]; then
+          export GIT_REMOTE_URL="$(printf '%s' "$$GIT_REMOTE_URL" | sed "s|127\\.0\\.0\\.1|$${GITLAB_HOST}|g; s|localhost|$${GITLAB_HOST}|g")"
+        fi
+        export MARKET_API_BASE_URL="$${MARKET_API_BASE_URL:-http://market-api:4310}"
+        node apps/market-api/dist/index.js
+    ports:
+      - "4310:4310"
+    volumes:
+      - ..:/app
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  ingest-worker:
+    image: node:20-bookworm
+    container_name: skills-ingest-worker
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - ../.env
+    environment:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: 127.0.0.1,localhost,gitlab,market-api
+      no_proxy: 127.0.0.1,localhost,gitlab,market-api
+    command:
+      - sh
+      - -lc
+      - |
+        GITLAB_HOST=host.docker.internal
+        if getent hosts gitlab >/dev/null 2>&1; then
+          GITLAB_HOST=gitlab
+        fi
+        export MARKET_API_BASE_URL="http://market-api:4310"
+        if [ -n "$$GIT_REMOTE_URL" ]; then
+          export GIT_REMOTE_URL="$(printf '%s' "$$GIT_REMOTE_URL" | sed "s|127\\.0\\.0\\.1|$${GITLAB_HOST}|g; s|localhost|$${GITLAB_HOST}|g")"
+        fi
+        node apps/ingest-worker/dist/index.js
+    depends_on:
+      - market-api
+    volumes:
+      - ..:/app
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+volumes:
+  postgres_data:
+  gitlab_config:
+  gitlab_logs:
+  gitlab_data:
+  nexus_data:

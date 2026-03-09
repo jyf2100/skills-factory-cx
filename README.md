@@ -6,7 +6,7 @@
 
 - `market-api`: 搜索/导入/审核/发布/安装清单/审计 API
 - `ingest-worker`: 批量检索/导入 worker（对接 market-api）
-- `find-skills`: 兼容旧命令的 CLI（推荐使用 `npx local-find-skills` / `npx local-install`）
+- `find-skills`: 兼容旧命令的 CLI（推荐使用 `npx local-find-skills` / `npx local-install` / `npx local-verify`）
 - `@skills/shared`: 类型、schema、签名验签工具
 
 ## Features (v1)
@@ -112,9 +112,9 @@ npm test
 # 先确保 dist 为最新
 npm run build
 
-# 若本机已有 4310 端口监听，先停止本地 dev:api 进程
+# 若本机已有 4311 端口监听，先停止本地 dev:api 进程
 docker compose -f infra/docker-compose.yml up -d market-api ingest-worker
-# 若要用 compose 自己管理 GitLab，先停止宿主机上的独立 `skills-gitlab`，再启动：
+# 若要用 compose 自己管理 GitLab，先停止宿主机上的独立 GitLab 容器，再启动：
 docker compose -f infra/docker-compose.yml up -d gitlab
 docker compose -f infra/docker-compose.yml logs -f market-api ingest-worker
 docker compose -f infra/docker-compose.yml down
@@ -126,7 +126,7 @@ docker compose -f infra/docker-compose.yml down
 - compose 使用宿主机已构建的 `dist` 产物，因此在启动前需要先运行一次 `npm run build`。
 - compose 运行时会强制将目录读模型切到 PostgreSQL（`CATALOG_BACKEND=postgres`，`POSTGRES_HOST=postgres`）。
 - compose 运行时只会把 `GIT_REMOTE_URL` 改写到容器内的 `gitlab` 服务（或回退到 `host.docker.internal`）；`GITLAB_RAW_BASE_URL` 保持宿主机可访问地址，避免安装清单返回内网域名。
-- 若要启动 compose 管理的 GitLab，请先停止现有独立 `skills-gitlab`，否则 `8929` / `2224` 会端口冲突。
+- 若要启动 compose 管理的 GitLab，请先停止现有独立 GitLab 容器，否则 `8929` / `2224` 会端口冲突。
 - 新起的 compose GitLab 默认是全新实例；首次使用前需要在其中创建 `root/skills-repo`。
 
 ## Notes

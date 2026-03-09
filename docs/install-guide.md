@@ -8,7 +8,7 @@
 
 - `market-api`：搜索、导入、审核、发布、安装清单、审计 API
 - `ingest-worker`：异步导入队列 worker
-- `find-skills`：安装和搜索 CLI
+- `find-skills`：兼容旧命令的安装和搜索 CLI（推荐使用 `local-find-skills` / `local-install` / `local-verify`）
 - `@skills/shared`：共享类型、签名、验签工具
 
 默认本地端口：
@@ -57,9 +57,9 @@ cp .env.example .env
 然后编辑本地 `.env`，至少确认这些变量：
 
 ```bash
-MARKET_API_PORT=4310
+MARKET_API_PORT=4311
 MARKET_API_HOST=127.0.0.1
-MARKET_API_BASE_URL=http://127.0.0.1:4310
+MARKET_API_BASE_URL=http://127.0.0.1:4311
 DATA_DIR=.data
 LOCAL_SKILLS_REPO=.data/local-skills-repo
 CATALOG_BACKEND=gitlab
@@ -174,7 +174,7 @@ docker compose -f infra/docker-compose.yml ps
 
 注意：
 
-- 如果本机已经有独立运行的 `skills-gitlab`，要先停掉，避免 `8929` / `2224` 端口冲突
+- 如果本机已经有独立运行的 GitLab 容器，要先停掉，避免 `8929` / `2224` 端口冲突
 - GitLab 首次启动通常需要几分钟
 - `.env` 中的 `GITLAB_ROOT_PASSWORD` 会作为初始化 root 密码
 
@@ -333,7 +333,7 @@ curl -I http://127.0.0.1:8929/root/skills-repo/-/raw/main/packages/<skill_id>/<v
 
 检查是否已有其他进程占用了：
 
-- `4310`
+- `4311`
 - `8929`
 - `2224`
 - `5432`

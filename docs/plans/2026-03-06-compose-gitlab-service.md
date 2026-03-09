@@ -1,5 +1,8 @@
 # 2026-03-06 Replace Gitea with GitLab in Compose
 
+> Historical note: this plan records the earlier migration from `gitea` / standalone `skills-gitlab` naming to the current compose-managed `gitlab` service. Treat old names in this file as baseline context, not current runtime instructions.
+
+
 ## Analysis
 
 ### Facts

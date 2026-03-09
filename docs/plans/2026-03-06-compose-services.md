@@ -1,5 +1,8 @@
 # 2026-03-06 Docker Compose App Services
 
+> Historical note: this plan contains baseline references from before the app-services compose refresh. The current runtime uses `gitlab` and exposes `market-api` on host port `4311`.
+
+
 ## Analysis
 
 ### Facts
@@ -27,7 +30,7 @@
 
 - 若继续使用宿主机 GitLab，容器内网络地址必须正确覆盖。
 - Monorepo workspace 镜像构建需要同时处理多个 package。
-- 宿主机上已有 4310 监听时，compose 端口映射会冲突。
+- 宿主机上已有 4311 监听时，compose 端口映射会冲突。
 
 ## Design
 
@@ -85,7 +88,7 @@
 - Red baseline confirmed: original compose file lacked `market-api` and `ingest-worker`.
 - Initial Dockerfile-based workspace image was blocked by an npm-in-container workspace install failure (`tsc` never became available after `npm install` / `npm ci`).
 - Final implementation uses `node:20-bookworm-slim` services with the repo bind-mounted and host-built `dist` artifacts.
-- Compose now starts both `market-api` and `ingest-worker`, and `market-api` is reachable on host port `4310`.
+- Compose now starts both `market-api` and `ingest-worker`, and `market-api` is reachable on host port `4311`.
 - Compose startup rewrites GitLab host references from `127.0.0.1` / `localhost` to `host.docker.internal` inside containers.
-- Validation: `docker compose -f infra/docker-compose.yml config --services`, `npm run build`, `docker compose -f infra/docker-compose.yml up -d market-api ingest-worker`, and `curl http://127.0.0.1:4310/healthz`.
+- Validation: `docker compose -f infra/docker-compose.yml config --services`, `npm run build`, `docker compose -f infra/docker-compose.yml up -d market-api ingest-worker`, and `curl http://127.0.0.1:4311/healthz`.
 - Next smallest task: either replace the old `gitea` service with a compose-managed `gitlab`, or make the worker poll loop emit structured health logs.

@@ -35,6 +35,19 @@ if (invokedAs === "local-find-skills") {
     });
 
   program.parseAsync(process.argv).catch(handleCliError);
+} else if (invokedAs === "local-verify") {
+  const program = new Command();
+  program.name("local-verify").description("Verify an installed skill against a local market source");
+  program
+    .requiredOption("--from <url>", "Local market base URL")
+    .argument("<skill>")
+    .argument("<version>")
+    .action(async (skill: string, version: string, options: { from: string }) => {
+      const config = loadCliConfig();
+      await verifySkill(config, skill, version, options.from);
+    });
+
+  program.parseAsync(process.argv).catch(handleCliError);
 } else {
   const program = new Command();
   program.name("find-skills").description("Local skills marketplace client");
@@ -66,7 +79,7 @@ if (invokedAs === "local-find-skills") {
     .description("Verify installed skill against registry manifest and signature")
     .action(async (skillRef: string, options: { from?: string }) => {
       const config = loadCliConfig();
-      await verifySkill(config, skillRef, options.from);
+      await verifySkill(config, skillRef, undefined, options.from);
     });
 
   const source = program.command("source").description("Manage market API sources");

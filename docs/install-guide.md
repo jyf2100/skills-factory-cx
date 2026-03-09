@@ -262,6 +262,7 @@ curl -sS http://127.0.0.1:4311/api/v1/install/<skill_id>/<version>
 ```bash
 npx local-find-skills --from http://127.0.0.1:4311 <keyword>
 npx local-install --from http://127.0.0.1:4311 <skill_id> <version>
+npx local-verify --from http://127.0.0.1:4311 <skill_id> <version>
 ```
 
 ## 10. 验证清单

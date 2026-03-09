@@ -57,6 +57,8 @@ npm --workspace find-skills run dev -- source list
 > `npx local-find-skills --from http://127.0.0.1:4311 <keyword>`
 >
 > `npx local-install --from http://127.0.0.1:4311 <skill> <version>`
+>
+> `npx local-verify --from http://127.0.0.1:4311 <skill> <version>`
 
 ## API Endpoints
 

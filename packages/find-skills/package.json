@@ -6,7 +6,8 @@
   "bin": {
     "find-skills": "dist/cli.js",
     "local-find-skills": "dist/cli.js",
-    "local-install": "dist/cli.js"
+    "local-install": "dist/cli.js",
+    "local-verify": "dist/cli.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

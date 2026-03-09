@@ -21,6 +21,10 @@ export function parseRef(ref: string): { skillId: string; version: string } {
   return { skillId, version };
 }
 
+export function resolveTarget(skillIdOrRef: string, version?: string): { skillId: string; version: string } {
+  return version ? { skillId: skillIdOrRef, version } : parseRef(skillIdOrRef);
+}
+
 export function resolveSourceUrl(config: CliConfig, sourceOverride?: string): string {
   const source = sourceOverride?.trim() || config.sources[0];
   if (!source) {
@@ -59,7 +63,7 @@ export async function installSkill(
   version?: string,
   sourceOverride?: string
 ): Promise<void> {
-  const target = version ? { skillId: skillIdOrRef, version } : parseRef(skillIdOrRef);
+  const target = resolveTarget(skillIdOrRef, version);
   const source = resolveSourceUrl(config, sourceOverride);
 
   const manifest = await jsonGet<InstallManifest>(
@@ -108,25 +112,30 @@ export async function installSkill(
   process.stdout.write(`Installed ${target.skillId}@${target.version} to ${targetDir}\n`);
 }
 
-export async function verifySkill(config: CliConfig, ref: string, sourceOverride?: string): Promise<void> {
-  const { skillId, version } = parseRef(ref);
+export async function verifySkill(
+  config: CliConfig,
+  skillIdOrRef: string,
+  version?: string,
+  sourceOverride?: string
+): Promise<void> {
+  const target = resolveTarget(skillIdOrRef, version);
   const source = resolveSourceUrl(config, sourceOverride);
-  const installDir = join(config.install_dir, skillId, version, ".install-manifest.json");
+  const installDir = join(config.install_dir, target.skillId, target.version, ".install-manifest.json");
 
   const installed = JSON.parse(readFileSync(installDir, "utf8")) as InstallManifest;
   const latest = await jsonGet<InstallManifest>(
-    `${source}/api/v1/install/${encodeURIComponent(skillId)}/${encodeURIComponent(version)}`
+    `${source}/api/v1/install/${encodeURIComponent(target.skillId)}/${encodeURIComponent(target.version)}`
   );
 
   if (installed.package_sha256 !== latest.package_sha256) {
-    throw new Error(`installed hash differs from registry manifest for ${skillId}@${version}`);
+    throw new Error(`installed hash differs from registry manifest for ${target.skillId}@${target.version}`);
   }
 
   const publicKey = await jsonGet<{ key_id: string; pem: string }>(`${source}/api/v1/public-key`);
   const ok = verifyHashSignature(latest.package_sha256, latest.signature, publicKey.pem);
   if (!ok) {
-    throw new Error(`current signature does not verify for ${skillId}@${version}`);
+    throw new Error(`current signature does not verify for ${target.skillId}@${target.version}`);
   }
 
-  process.stdout.write(`Verified ${skillId}@${version}\n`);
+  process.stdout.write(`Verified ${target.skillId}@${target.version}\n`);
 }

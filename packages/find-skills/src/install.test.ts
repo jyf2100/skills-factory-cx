@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCatalogSearchUrl, parseRef, resolveSourceUrl } from "./install.js";
+import { buildCatalogSearchUrl, parseRef, resolveSourceUrl, resolveTarget } from "./install.js";
 
 describe("install helpers", () => {
   it("builds catalog search url with query", () => {
@@ -14,5 +14,9 @@ describe("install helpers", () => {
 
   it("parses legacy skill reference", () => {
     expect(parseRef("demo-skill@1.2.3")).toEqual({ skillId: "demo-skill", version: "1.2.3" });
+  });
+
+  it("supports local command target args", () => {
+    expect(resolveTarget("demo-skill", "1.2.3")).toEqual({ skillId: "demo-skill", version: "1.2.3" });
   });
 });

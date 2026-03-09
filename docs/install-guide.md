@@ -13,7 +13,7 @@
 
 默认本地端口：
 
-- `4310`：`market-api`
+- `4311`：`market-api`
 - `8929`：本地 GitLab HTTP
 - `2224`：本地 GitLab SSH
 - `5432`：PostgreSQL
@@ -124,7 +124,7 @@ npm run dev:worker
 终端 3（可选）：
 
 ```bash
-npm --workspace find-skills run dev -- search sample
+npm --workspace find-skills run dev -- search --from http://127.0.0.1:4311 sample
 npm --workspace find-skills run dev -- source list
 ```
 
@@ -219,7 +219,7 @@ git ls-remote "http://root:<你的 GitLab 密码>@127.0.0.1:8929/root/skills-rep
 浏览器打开：
 
 ```text
-http://127.0.0.1:4310/review
+http://127.0.0.1:4311/review
 ```
 
 ### 9.2 搜索并导入 Skill
@@ -227,7 +227,7 @@ http://127.0.0.1:4310/review
 也可以直接走 API：
 
 ```bash
-curl -sS -X POST http://127.0.0.1:4310/api/v1/ingest/search \
+curl -sS -X POST http://127.0.0.1:4311/api/v1/ingest/search \
   -H 'Content-Type: application/json' \
   -d '{"query":"sample"}'
 ```
@@ -237,7 +237,7 @@ curl -sS -X POST http://127.0.0.1:4310/api/v1/ingest/search \
 审批接口：
 
 ```bash
-curl -sS -X POST http://127.0.0.1:4310/api/v1/reviews/<ingest_id>/approve \
+curl -sS -X POST http://127.0.0.1:4311/api/v1/reviews/<ingest_id>/approve \
   -H 'Content-Type: application/json' \
   -d '{"reviewer":"admin","note":"approve"}'
 ```
@@ -252,7 +252,7 @@ curl -sS -X POST http://127.0.0.1:4310/api/v1/reviews/<ingest_id>/approve \
 ### 9.4 获取安装清单
 
 ```bash
-curl -sS http://127.0.0.1:4310/api/v1/install/<skill_id>/<version>
+curl -sS http://127.0.0.1:4311/api/v1/install/<skill_id>/<version>
 ```
 
 如果配置了 `GITLAB_RAW_BASE_URL`，这里返回的 `package_url` 会直接指向本地 GitLab Raw 地址。
@@ -260,9 +260,8 @@ curl -sS http://127.0.0.1:4310/api/v1/install/<skill_id>/<version>
 ### 9.5 用 CLI 安装
 
 ```bash
-npm --workspace find-skills run dev -- install \
-  --from http://127.0.0.1:4310 \
-  <skill_id> <version>
+npx local-find-skills --from http://127.0.0.1:4311 <keyword>
+npx local-install --from http://127.0.0.1:4311 <skill_id> <version>
 ```
 
 ## 10. 验证清单
@@ -270,8 +269,8 @@ npm --workspace find-skills run dev -- install \
 建议至少验证以下几项：
 
 ```bash
-curl -sS http://127.0.0.1:4310/healthz
-curl -sS http://127.0.0.1:4310/api/v1/public-key
+curl -sS http://127.0.0.1:4311/healthz
+curl -sS http://127.0.0.1:4311/api/v1/public-key
 docker compose -f infra/docker-compose.yml ps
 npm test
 ```
@@ -349,8 +348,8 @@ npm install
 npm run build
 docker compose -f infra/docker-compose.yml up -d gitlab
 docker compose -f infra/docker-compose.yml up -d market-api ingest-worker
-curl -sS http://127.0.0.1:4310/healthz
-open http://127.0.0.1:4310/review
+curl -sS http://127.0.0.1:4311/healthz
+open http://127.0.0.1:4311/review
 ```
 
 如果只想本地开发，不跑完整发布链路，也可以跳过 GitLab，只启动 `market-api` 和 `ingest-worker`。

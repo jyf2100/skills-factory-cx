@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -12,6 +12,8 @@ import {
   listSkillsQuerySchema,
   reviewSchema,
   type IngestJob,
+  type InstallManifest,
+  type PublishedSkill,
   type ReviewDecision,
   type RiskLevel,
   verifyHashSignature
@@ -471,36 +473,30 @@ export function createApp({ config, store, catalog: catalogOverride, catalogProj
   });
 
   app.get("/api/v1/install/:skillId/:version", (req, res) => {
-    const state = store.load();
-    const version = state.published.find(
-      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
-    );
-    if (!version) {
+    const published = findPublishedSkill(store, req.params.skillId, req.params.version);
+    const manifest = loadLocalInstallManifest(config, req.params.skillId, req.params.version) ?? published?.install;
+    if (!manifest) {
       return res.status(404).json({ error: "install manifest not found" });
     }
 
     const publicPem = readFileSync(config.signingPublicKeyPath, "utf8");
-    const verified = verifyHashSignature(version.install.package_sha256, version.install.signature, publicPem);
-    res.json({ ...version.install, signature_valid: verified });
+    const verified = verifyHashSignature(manifest.package_sha256, manifest.signature, publicPem);
+    res.json({ ...manifest, signature_valid: verified });
   });
 
   app.get("/api/v1/packages/:skillId/:version", (req, res) => {
-    const state = store.load();
-    const version = state.published.find(
-      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
-    );
-    if (!version) {
+    const published = findPublishedSkill(store, req.params.skillId, req.params.version);
+    const packagePath = localPackagePath(config, req.params.skillId, req.params.version) ?? published?.package_path;
+    if (!packagePath) {
       return res.status(404).json({ error: "package not found" });
     }
-    return res.sendFile(version.package_path);
+    return res.sendFile(packagePath);
   });
 
   app.post("/api/v1/install-log/:skillId/:version", (req, res) => {
-    const state = store.load();
-    const published = state.published.find(
-      (item) => item.record.skill_id === req.params.skillId && item.record.version === req.params.version
-    );
-    if (!published) {
+    const published = findPublishedSkill(store, req.params.skillId, req.params.version);
+    const manifest = loadLocalInstallManifest(config, req.params.skillId, req.params.version) ?? published?.install;
+    if (!manifest) {
       return res.status(404).json({ error: "published skill not found" });
     }
 
@@ -517,4 +513,22 @@ export function createApp({ config, store, catalog: catalogOverride, catalogProj
   });
 
   return app;
+}
+
+
+function findPublishedSkill(store: StateStore, skillId: string, version: string): PublishedSkill | undefined {
+  return store.load().published.find((item) => item.record.skill_id === skillId && item.record.version === version);
+}
+
+function loadLocalInstallManifest(config: AppConfig, skillId: string, version: string): InstallManifest | undefined {
+  const path = join(config.localSkillsRepo, "install-manifests", skillId, `${version}.json`);
+  if (!existsSync(path)) {
+    return undefined;
+  }
+  return JSON.parse(readFileSync(path, "utf8")) as InstallManifest;
+}
+
+function localPackagePath(config: AppConfig, skillId: string, version: string): string | undefined {
+  const path = join(config.localSkillsRepo, "packages", skillId, `${version}.tgz`);
+  return existsSync(path) ? path : undefined;
 }

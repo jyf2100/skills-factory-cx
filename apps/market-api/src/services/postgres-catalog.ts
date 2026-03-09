@@ -100,7 +100,7 @@ export class PostgresCatalogService implements CatalogReader {
       ...this.toSkillSummary(summary),
       readme_markdown: summary.readme_markdown,
       readme_html: summary.readme_html,
-      install_command: `npx find-skills install --from ${this.config.baseUrl} ${skillId} ${summary.latest_version}`,
+      install_command: `npx local-install --from ${this.config.baseUrl} ${skillId} ${summary.latest_version}`,
       versions: versionsResult.rows.map((row) => this.toSkillVersion(row))
     };
   }

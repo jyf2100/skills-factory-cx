@@ -6,7 +6,7 @@
 
 - `market-api`: 搜索/导入/审核/发布/安装清单/审计 API
 - `ingest-worker`: 批量检索/导入 worker（对接 market-api）
-- `find-skills`: `npx find-skills ...` CLI
+- `find-skills`: 兼容旧命令的 CLI（推荐使用 `npx local-find-skills` / `npx local-install`）
 - `@skills/shared`: 类型、schema、签名验签工具
 
 ## Features (v1)
@@ -48,13 +48,15 @@ npm run dev:api
 npm run dev:worker
 # 可选：生产者模式，按 query/source_url 入队
 npm --workspace @skills/ingest-worker run dev
-npm --workspace find-skills run dev -- search sample
+npm --workspace find-skills run dev -- search --from http://127.0.0.1:4311 sample
 npm --workspace find-skills run dev -- source list
 ```
 
-> 发布到私有 npm（Nexus/Artifactory）后，客户端可用：
+> 本地技能市场推荐命令：
 >
-> `npx find-skills search <keyword>`
+> `npx local-find-skills --from http://127.0.0.1:4311 <keyword>`
+>
+> `npx local-install --from http://127.0.0.1:4311 <skill> <version>`
 
 ## API Endpoints
 

@@ -5,7 +5,15 @@ import { sha256Buffer, verifyHashSignature, type InstallManifest } from "@skills
 import type { CliConfig } from "./config.js";
 import { jsonGet } from "./http.js";
 
-function parseRef(ref: string): { skillId: string; version: string } {
+interface CatalogSkillItem {
+  skill_id: string;
+  latest_version: string;
+  risk_level: string;
+  source_url: string;
+  category: string;
+}
+
+export function parseRef(ref: string): { skillId: string; version: string } {
   const [skillId, version] = ref.split("@");
   if (!skillId || !version) {
     throw new Error("skill reference must be <skill_id>@<version>");
@@ -13,27 +21,49 @@ function parseRef(ref: string): { skillId: string; version: string } {
   return { skillId, version };
 }
 
-export async function searchSkills(config: CliConfig, query: string): Promise<void> {
-  const source = config.sources[0];
-  const payload = await jsonGet<{ items: Array<{ record: { skill_id: string; version: string; risk_level: string; source_url: string } }> }>(
-    `${source}/api/v1/skills?query=${encodeURIComponent(query)}`
-  );
+export function resolveSourceUrl(config: CliConfig, sourceOverride?: string): string {
+  const source = sourceOverride?.trim() || config.sources[0];
+  if (!source) {
+    throw new Error("no market source configured");
+  }
+  return source.replace(/\/$/, "");
+}
+
+export function buildCatalogSearchUrl(source: string, query?: string): string {
+  const url = new URL(`${source}/api/v1/catalog/skills`);
+  const normalized = query?.trim();
+  if (normalized) {
+    url.searchParams.set("query", normalized);
+  }
+  return url.toString();
+}
+
+export async function searchSkills(config: CliConfig, query = "", sourceOverride?: string): Promise<void> {
+  const source = resolveSourceUrl(config, sourceOverride);
+  const payload = await jsonGet<{ items: CatalogSkillItem[] }>(buildCatalogSearchUrl(source, query));
   if (payload.items.length === 0) {
     process.stdout.write("No skills found.\n");
     return;
   }
 
   for (const item of payload.items) {
-    process.stdout.write(`${item.record.skill_id}@${item.record.version} [risk=${item.record.risk_level}] ${item.record.source_url}\n`);
+    process.stdout.write(
+      `${item.skill_id} ${item.latest_version} [risk=${item.risk_level}] [category=${item.category}] ${item.source_url}\n`
+    );
   }
 }
 
-export async function installSkill(config: CliConfig, ref: string): Promise<void> {
-  const { skillId, version } = parseRef(ref);
-  const source = config.sources[0];
+export async function installSkill(
+  config: CliConfig,
+  skillIdOrRef: string,
+  version?: string,
+  sourceOverride?: string
+): Promise<void> {
+  const target = version ? { skillId: skillIdOrRef, version } : parseRef(skillIdOrRef);
+  const source = resolveSourceUrl(config, sourceOverride);
 
   const manifest = await jsonGet<InstallManifest>(
-    `${source}/api/v1/install/${encodeURIComponent(skillId)}/${encodeURIComponent(version)}`
+    `${source}/api/v1/install/${encodeURIComponent(target.skillId)}/${encodeURIComponent(target.version)}`
   );
 
   const packageResponse = await fetch(manifest.package_url);
@@ -44,7 +74,7 @@ export async function installSkill(config: CliConfig, ref: string): Promise<void
 
   const sha = sha256Buffer(packageBuffer);
   if (sha !== manifest.package_sha256) {
-    throw new Error(`hash mismatch for ${skillId}@${version}`);
+    throw new Error(`hash mismatch for ${target.skillId}@${target.version}`);
   }
 
   const publicKey = await jsonGet<{ key_id: string; pem: string }>(`${source}/api/v1/public-key`);
@@ -54,33 +84,33 @@ export async function installSkill(config: CliConfig, ref: string): Promise<void
 
   const signatureOk = verifyHashSignature(sha, manifest.signature, publicKey.pem);
   if (!signatureOk) {
-    throw new Error(`signature verification failed for ${skillId}@${version}`);
+    throw new Error(`signature verification failed for ${target.skillId}@${target.version}`);
   }
 
-  const cacheDir = join(config.install_dir, ".cache", skillId);
+  const cacheDir = join(config.install_dir, ".cache", target.skillId);
   mkdirSync(cacheDir, { recursive: true });
-  const archivePath = join(cacheDir, `${version}.tgz`);
+  const archivePath = join(cacheDir, `${target.version}.tgz`);
   writeFileSync(archivePath, packageBuffer);
 
-  const targetDir = join(config.install_dir, skillId, version);
+  const targetDir = join(config.install_dir, target.skillId, target.version);
   mkdirSync(targetDir, { recursive: true });
   await tar.extract({ file: archivePath, cwd: targetDir });
 
   const manifestPath = join(targetDir, ".install-manifest.json");
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf8");
 
-  await fetch(`${source}/api/v1/install-log/${encodeURIComponent(skillId)}/${encodeURIComponent(version)}`, {
+  await fetch(`${source}/api/v1/install-log/${encodeURIComponent(target.skillId)}/${encodeURIComponent(target.version)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ actor: process.env.USER ?? "unknown", host: process.env.HOSTNAME ?? "localhost" })
   });
 
-  process.stdout.write(`Installed ${skillId}@${version} to ${targetDir}\n`);
+  process.stdout.write(`Installed ${target.skillId}@${target.version} to ${targetDir}\n`);
 }
 
-export async function verifySkill(config: CliConfig, ref: string): Promise<void> {
+export async function verifySkill(config: CliConfig, ref: string, sourceOverride?: string): Promise<void> {
   const { skillId, version } = parseRef(ref);
-  const source = config.sources[0];
+  const source = resolveSourceUrl(config, sourceOverride);
   const installDir = join(config.install_dir, skillId, version, ".install-manifest.json");
 
   const installed = JSON.parse(readFileSync(installDir, "utf8")) as InstallManifest;

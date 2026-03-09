@@ -17,7 +17,7 @@ export function loadCliConfig(): CliConfig {
     return JSON.parse(readFileSync(path, "utf8")) as CliConfig;
   } catch {
     const defaultConfig: CliConfig = {
-      sources: [process.env.MARKET_API_BASE_URL ?? "http://127.0.0.1:4310"],
+      sources: [process.env.MARKET_API_BASE_URL ?? "http://127.0.0.1:4311"],
       install_dir: process.env.FIND_SKILLS_INSTALL_DIR ?? join(homedir(), ".local", "share", "find-skills", "skills")
     };
     mkdirSync(join(homedir(), ".find-skills"), { recursive: true });

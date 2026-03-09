@@ -196,7 +196,7 @@ export class GitLabCatalogService {
       ...aggregate.summary,
       readme_markdown: aggregate.latest.readmeMarkdown,
       readme_html: renderSkillMarkdown(aggregate.latest.readmeMarkdown),
-      install_command: `npx find-skills install --from <internal-market> ${skillId} ${aggregate.latest.record.version}`,
+      install_command: `npx local-install --from <internal-market> ${skillId} ${aggregate.latest.record.version}`,
       versions: aggregate.versions.map((bundle) => ({
         version: bundle.record.version,
         risk_level: bundle.record.risk_level,

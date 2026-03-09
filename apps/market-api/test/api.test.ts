@@ -142,6 +142,64 @@ describe("market api", () => {
     ).toBe(true);
   });
 
+  it("serves install manifest and package from local skills repo even when state is empty", async () => {
+    const root = mkdtempSync(join(tmpdir(), "skills-market-"));
+    const config: AppConfig = {
+      port: 0,
+      host: "127.0.0.1",
+      baseUrl: "http://127.0.0.1:4311",
+      dataDir: join(root, "data"),
+      localSkillsRepo: join(root, "repo"),
+      whitelistSources: ["https://github.com"],
+      signingPrivateKeyPath: join(root, "keys", "private.pem"),
+      signingPublicKeyPath: join(root, "keys", "public.pem")
+    };
+    ensureEd25519Keypair(config.signingPrivateKeyPath, config.signingPublicKeyPath);
+
+    const workspacePath = join(root, "local-repo-skill");
+    mkdirSync(workspacePath, { recursive: true });
+    writeFileSync(join(workspacePath, "SKILL.md"), "# local repo skill\n", "utf8");
+
+    const ingest: IngestRecord = {
+      id: "ing-local-repo",
+      source_url: "https://github.com/acme/local-repo-skill",
+      imported_at: new Date().toISOString(),
+      status: "approved",
+      skill_id: "local-repo-skill",
+      version: "1.0.0",
+      workspace_path: workspacePath,
+      source_commit: "abc123",
+      scan_issues: [],
+      risk_level: "low",
+      sandbox_result: { ran: false, runtime: "none", ok: true, output: "skipped" }
+    };
+
+    await publishSkill({
+      ingest,
+      approval: {
+        ingest_id: ingest.id,
+        reviewer: "alice",
+        decision: "approve",
+        note: "ok",
+        reviewed_at: new Date().toISOString()
+      },
+      config
+    });
+
+    const store = new JsonStateStore(config.dataDir, config.whitelistSources);
+    const app = createApp({ config, store });
+
+    const manifestRes = await request(app).get("/api/v1/install/local-repo-skill/1.0.0");
+    expect(manifestRes.status).toBe(200);
+    expect(manifestRes.body.skill_id).toBe("local-repo-skill");
+
+    const packageRes = await request(app).get("/api/v1/packages/local-repo-skill/1.0.0");
+    expect(packageRes.status).toBe(200);
+
+    const logRes = await request(app).post("/api/v1/install-log/local-repo-skill/1.0.0").send({ actor: "tester" });
+    expect(logRes.status).toBe(202);
+  });
+
   it("returns 500 when publish fails", async () => {
     const root = mkdtempSync(join(tmpdir(), "skills-market-"));
     const config: AppConfig = {

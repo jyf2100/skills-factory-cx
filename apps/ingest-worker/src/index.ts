@@ -2,7 +2,7 @@ import { loadDotEnv } from "@skills/shared";
 import { enqueueTargets, processNextJob } from "./worker.js";
 
 loadDotEnv();
-const apiBaseUrl = process.env.MARKET_API_BASE_URL ?? "http://127.0.0.1:4310";
+const apiBaseUrl = process.env.MARKET_API_BASE_URL ?? "http://127.0.0.1:4311";
 const query = process.env.INGEST_QUERY;
 const sourceUrl = process.env.INGEST_SOURCE_URL;
 const workerId = process.env.INGEST_WORKER_ID ?? `worker-${process.pid}`;

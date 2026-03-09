@@ -13,7 +13,7 @@ describe("review console UI", () => {
     const config: AppConfig = {
       port: 0,
       host: "127.0.0.1",
-      baseUrl: "http://127.0.0.1:4310",
+      baseUrl: "http://127.0.0.1:4311",
       dataDir: join(root, "data"),
       localSkillsRepo: join(root, "repo"),
       whitelistSources: ["https://github.com"],

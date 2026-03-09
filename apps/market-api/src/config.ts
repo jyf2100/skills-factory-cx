@@ -40,9 +40,9 @@ export interface AppConfig {
 export function loadConfig(): AppConfig {
   const dataDir = resolve(env("DATA_DIR", ".data"));
   return {
-    port: Number(env("MARKET_API_PORT", "4310")),
+    port: Number(env("MARKET_API_PORT", "4311")),
     host: env("MARKET_API_HOST", "127.0.0.1"),
-    baseUrl: env("MARKET_API_BASE_URL", `http://127.0.0.1:4310`),
+    baseUrl: env("MARKET_API_BASE_URL", `http://127.0.0.1:4311`),
     dataDir,
     localSkillsRepo: resolve(env("LOCAL_SKILLS_REPO", `${dataDir}/local-skills-repo`)),
     whitelistSources: env("WHITELIST_SOURCES", "https://github.com,https://gitlab.com,https://skills.sh")

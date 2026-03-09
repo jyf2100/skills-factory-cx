@@ -23,7 +23,7 @@ describe("ingest worker", () => {
       .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
 
     const processed = await processNextJob({
-      apiBaseUrl: "http://127.0.0.1:4310",
+      apiBaseUrl: "http://127.0.0.1:4311",
       workerId: "worker-1",
       fetchImpl: fetchMock as typeof fetch
     });
